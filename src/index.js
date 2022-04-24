@@ -1,44 +1,25 @@
 const { Client, Intents, Collection } = require('discord.js');
+const mongoose = require('mongoose');
 const botconfig = require('./botconfig.json');
 const token = botconfig.TOKEN // Discord Bot Token
 const { initializeCommands } = require('./deploy');
+const guildSchema = require('./schemas/guild-schema');
 const fs = require('fs');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.GUILD_PRESENCES] });
 const prefLen = botconfig.PREFIX.length;
 client.commands = new Collection();
 
-client.on('ready', async () => {
-    await initializeCommands(client);
-    console.log(`${client.user.username} is online!`);
-})
-
-// client.on('message', async message => {
-//     if (message.author.bot) return;
-
-//     var cmdStr = message.content.split(" ")[0].slice(prefLen).toLowerCase();
-//     console.log(cmdStr);
-//     var args = message.content.substring().filter(function (el) {
-//         return el != ' ';
-//     })
-
-//     const command = client.commands.get(cmdStr);
-
-//     if (!command) return;
-
-//     try {
-//         await command.execute(interaction, args, client);
-//     } catch (error) {
-//         console.error(error);
-//     }
-// })
-
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
-
     const command = client.commands.get(interaction.commandName);
-
     if (!command) return;
+
+    if (command.permission) {
+        const user = interaction.member;
+        const userPerms = interaction.channel.permissionsFor(user);
+        if (!userPerms || !userPerms.has(command.permission)) return interaction.reply("You do not have the permissions to use this command :(")
+    }
 
     try {
         await command.execute(interaction, [], client);
@@ -46,5 +27,36 @@ client.on('interactionCreate', async interaction => {
         console.error(error);
     }
 });
+
+client.on('ready', async () => {
+    await initializeCommands(client);
+    const Guilds = client.guilds.cache.map(guild => guild.id);
+    client.mongo = await mongoose.connect(botconfig.MONGO_URI, { keepAlive: true }); // a MongoDB is used to store collection data to be used when monitoring.
+
+    Guilds.forEach(async function (id, index) {
+        try {
+            const res = await guildSchema.findOne({
+                guild_id: id
+            });
+
+            // If guild is not in mongoDB, add it with a guildSchema
+            // Else ignore and use already set values for commands
+            if (!res) {
+                console.log("New guild detected. Creating schema");
+                const guild = {
+                    guild_id: id,
+                    alerts_channel: ''
+                }
+                await new guildSchema(guild).save();
+            }
+
+        } catch (err) {
+            console.log(err);
+            console.log("MongoDB closing connection.")
+        }
+    })
+
+    console.log(`${client.user.username} is online!`);
+})
 
 client.login(token)

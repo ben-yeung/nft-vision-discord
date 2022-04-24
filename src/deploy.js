@@ -17,10 +17,10 @@ exports.initializeCommands = async (client) => {
 
     const rest = new REST({ version: '9' }).setToken(botconfig.TOKEN);
 
-    // Use the line below to enable global slash (Takes a while to upload)
-    await rest.put(Routes.applicationCommands(botconfig.CLIENT_ID), { body: commands });
+    // Use the line below to enable slash commands globally (Takes a while to cache) 
+    // await rest.put(Routes.applicationCommands(botconfig.CLIENT_ID), { body: commands });
 
-    // Register with specific guild for testing
+    // Register with specific guild for testing/development
     await rest.put(Routes.applicationGuildCommands(botconfig.CLIENT_ID, botconfig.GUILD_ID), { body: commands })
         .then(() => console.log('Successfully registered application commands.'))
         .catch(console.error);
