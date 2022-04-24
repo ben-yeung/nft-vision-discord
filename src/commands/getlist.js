@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction, args, client) {
 
         const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) await new guildSchema({ guild_id: interaction.guild.id, alerts_channel: '' }).save();
+        if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
 
         const collections = res.collections;
         let compiledStr = '';
@@ -28,7 +28,7 @@ module.exports = {
         compiledStr = (compiledStr == '' ? 'No collections currently monitored. Use /addtarget to get started.' : compiledStr);
 
         let embed = new Discord.MessageEmbed()
-            .setTitle('Monitor List')
+            .setTitle('Collection Monitor List')
             .setDescription(compiledStr)
             .setColor(44774)
             .setTimestamp()

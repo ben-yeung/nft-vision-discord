@@ -17,6 +17,17 @@ exports.initializeCommands = async (client) => {
 
     const rest = new REST({ version: '9' }).setToken(botconfig.TOKEN);
 
+    // Used for deleting all global commands. Be careful!
+    // await rest.get(Routes.applicationCommands(botconfig.CLIENT_ID))
+    //     .then(data => {
+    //         const promises = [];
+    //         for (const command of data) {
+    //             const deleteUrl = `${Routes.applicationCommands(botconfig.CLIENT_ID)}/${command.id}`;
+    //             promises.push(rest.delete(deleteUrl));
+    //         }
+    //         return Promise.all(promises);
+    //     });
+
     // Use the line below to enable slash commands globally (Takes a while to cache) 
     // await rest.put(Routes.applicationCommands(botconfig.CLIENT_ID), { body: commands });
 

@@ -30,24 +30,25 @@ client.on('interactionCreate', async interaction => {
 
 client.on('ready', async () => {
     await initializeCommands(client);
-    const Guilds = client.guilds.cache.map(guild => guild.id);
+    const Guilds = client.guilds.cache;
     client.mongo = await mongoose.connect(botconfig.MONGO_URI, { keepAlive: true }); // a MongoDB is used to store collection data to be used when monitoring.
 
-    Guilds.forEach(async function (id, index) {
+    Guilds.forEach(async function (guild, index) {
         try {
             const res = await guildSchema.findOne({
-                guild_id: id
+                guild_id: guild.id
             });
 
             // If guild is not in mongoDB, add it with a guildSchema
             // Else ignore and use already set values for commands
             if (!res) {
                 console.log("New guild detected. Creating schema");
-                const guild = {
-                    guild_id: id,
+                const guildOBJ = {
+                    guild_id: guild.id,
+                    guild_name: guild.name,
                     alerts_channel: ''
                 }
-                await new guildSchema(guild).save();
+                await new guildSchema(guildOBJ).save();
             }
 
         } catch (err) {

@@ -3,7 +3,7 @@ const guildSchema = require('../schemas/guild-schema');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('addtarget')
+        .setName('add')
         .setDescription('Add a collection to monitor its floor price: add [collection slug] [price in ETH]')
         .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true))
         .addNumberOption(option => option.setName('target-price').setDescription('Target price for collection (in ETH).').setRequired(true))
@@ -16,7 +16,7 @@ module.exports = {
         const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
 
         const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) await new guildSchema({ guild_id: interaction.guild.id, alerts_channel: '' }).save();
+        if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
 
         if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collectionsd.')
 

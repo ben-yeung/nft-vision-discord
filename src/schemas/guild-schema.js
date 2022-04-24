@@ -20,6 +20,10 @@ const guild_schema = new mongoose.Schema({
         type: String,
         required: true
     },
+    guild_name: {
+        type: String,
+        required: true
+    },
     alerts_channel: String,
     collections: [collection_schema]
 });
