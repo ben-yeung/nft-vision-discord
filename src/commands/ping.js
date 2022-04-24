@@ -4,6 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('ping')
         .setDescription('Play some ping pong'),
+    options: '',
 
     async execute(interaction, args, client) {
         let ping = Math.abs(Date.now() - interaction.createdTimestamp);

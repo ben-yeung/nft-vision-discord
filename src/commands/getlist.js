@@ -1,12 +1,12 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require("discord.js")
-const { collection } = require('../schemas/guild-schema');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const guildSchema = require('../schemas/guild-schema');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getlist')
         .setDescription('Get a list of the collections currently being monitored.'),
+    options: '',
 
     async execute(interaction, args, client) {
 
@@ -18,8 +18,8 @@ module.exports = {
 
         for (var i = 0; i < collections.length; i++) {
             let url = 'https://opensea.io/collection/' + collections[i].slug;
-            let check = (collections[i].check_above ? 'Above' : 'Below')
-            compiledStr += `\n\n **${collections[i].slug}** | Target Price: ${check} ${collections[i].target}Ξ | [OpenSea](${url})`
+            let check = (collections[i].check_above ? 'Above' : 'Below');
+            compiledStr += `\n\n **${collections[i].slug}** | Target Price: ${check} ${collections[i].target}Ξ | [OpenSea](${url})`;
         }
 
         compiledStr = (compiledStr == '' ? 'No collections currently monitored. Use /addtarget to get started.' : compiledStr);
@@ -28,8 +28,8 @@ module.exports = {
             .setTitle('Collection Monitor List')
             .setDescription(compiledStr)
             .setColor(44774)
-            .setTimestamp()
+            .setTimestamp();
 
-        return interaction.reply({ embeds: [embed] })
+        return interaction.reply({ embeds: [embed] });
     },
 }

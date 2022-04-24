@@ -6,6 +6,7 @@ module.exports = {
         .setName('remove')
         .setDescription('Remove a collection from the monitor list.')
         .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true)),
+    options: '[collection-slug]',
     async execute(interaction, args, client) {
 
         const collectionSlug = interaction.options.getString('collection-slug');
@@ -28,6 +29,6 @@ module.exports = {
             return interaction.reply('An error occurred. Please try again.');
         }
 
-        return interaction.reply(`Successfully removed **${collectionSlug}** from monitor list.`)
+        return interaction.reply(`Successfully removed **${collectionSlug}** from monitor list.`);
     },
 }

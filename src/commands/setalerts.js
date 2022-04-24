@@ -4,9 +4,10 @@ const guildSchema = require('../schemas/guild-schema');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setalerts')
-        .setDescription('Set the current Guild\'s dedicated Alerts Channel. Must have admin perms: /setalerts [channel id]')
+        .setDescription('Set the current Guild\'s dedicated Alerts Channel. Must have admin perms.')
         .addStringOption(option => option.setName('channel-id').setDescription('Enter a channel id to receive floor price alerts.').setRequired(true)),
     permission: 'ADMINISTRATOR',
+    options: '[channel-id]',
 
     async execute(interaction, args, client) {
 

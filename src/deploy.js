@@ -17,7 +17,9 @@ exports.initializeCommands = async (client) => {
 
     const rest = new REST({ version: '9' }).setToken(botconfig.TOKEN);
 
-    // Used for deleting all global commands. Be careful!
+    // Used for deleting all global commands. Be careful! Also takes time to cache.
+    // Replace applicationCommands(client_id) with applicationGuildCommands(client_id, guild_id) to delete guild comms
+
     // await rest.get(Routes.applicationCommands(botconfig.CLIENT_ID))
     //     .then(data => {
     //         const promises = [];

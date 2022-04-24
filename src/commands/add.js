@@ -8,7 +8,7 @@ module.exports = {
         .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true))
         .addNumberOption(option => option.setName('target-price').setDescription('Target price for collection (in ETH).').setRequired(true))
         .addBooleanOption(option => option.setName('above-target').setDescription('If you want to monitor for a buy in (below target price) set this to False. Defaults to True.')),
-
+    options: '[collection-slug] [target-price] [Above?]',
     async execute(interaction, args, client) {
 
         const collectionSlug = interaction.options.getString('collection-slug');
