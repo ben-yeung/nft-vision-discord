@@ -12,6 +12,10 @@ const collection_schema = new mongoose.Schema({
     check_above: {
         type: Boolean,
         required: true
+    },
+    last_check: {
+        type: Number,
+        required: true
     }
 });
 

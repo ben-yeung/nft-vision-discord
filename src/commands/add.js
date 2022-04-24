@@ -14,6 +14,7 @@ module.exports = {
         const collectionSlug = interaction.options.getString('collection-slug');
         const targetPrice = interaction.options.getNumber('target-price');
         const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
+        const lastCheckDefault = (interaction.options.getBoolean('above-target') == null ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
 
         const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
         if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
@@ -23,7 +24,8 @@ module.exports = {
         const newCollection = {
             slug: collectionSlug,
             target: targetPrice,
-            check_above: checkAbove
+            check_above: checkAbove,
+            last_check: lastCheckDefault
         }
 
         var collections = res.collections;

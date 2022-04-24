@@ -22,7 +22,7 @@ module.exports = {
             compiledStr += `\n\n **${collections[i].slug}** | Target Price: ${check} ${collections[i].target}Ξ | [OpenSea](${url})`;
         }
 
-        compiledStr = (compiledStr == '' ? 'No collections currently monitored. Use /addtarget to get started.' : compiledStr);
+        compiledStr = (compiledStr == '' ? 'No collections currently monitored. Use /add to get started.' : compiledStr);
 
         let embed = new Discord.MessageEmbed()
             .setTitle('Collection Monitor List')
