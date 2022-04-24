@@ -15,9 +15,10 @@ module.exports = {
         const targetPrice = interaction.options.getNumber('target-price');
         const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
 
-        const res = await guildSchema.findOne({
-            guild_id: interaction.guild.id
-        })
+        const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        if (!res) await new guildSchema({ guild_id: interaction.guild.id, alerts_channel: '' }).save();
+
+        if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collectionsd.')
 
         const newCollection = {
             slug: collectionSlug,
@@ -25,7 +26,7 @@ module.exports = {
             check_above: checkAbove
         }
 
-        const collections = res.collections;
+        var collections = res.collections;
         var alreadyAdded = false;
 
         for (var i = 0; i < collections.length; i++) {
