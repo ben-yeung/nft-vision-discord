@@ -18,11 +18,8 @@ module.exports = {
 
         for (var i = 0; i < collections.length; i++) {
             let url = 'https://opensea.io/collection/' + collections[i].slug;
-            if (collections[i].check_above) {
-                compiledStr += `\n\n **${collections[i].slug}** | Target Price: Above ${collections[i].target}Ξ | [OpenSea](${url})`
-            } else {
-                compiledStr += `\n\n **${collections[i].slug}** | Target Price: Below ${collections[i].target}Ξ | [OpenSea](${url})`
-            }
+            let check = (collections[i].check_above ? 'Above' : 'Below')
+            compiledStr += `\n\n **${collections[i].slug}** | Target Price: ${check} ${collections[i].target}Ξ | [OpenSea](${url})`
         }
 
         compiledStr = (compiledStr == '' ? 'No collections currently monitored. Use /addtarget to get started.' : compiledStr);

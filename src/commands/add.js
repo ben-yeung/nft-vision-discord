@@ -47,6 +47,7 @@ module.exports = {
             return interaction.reply('An error occurred. Please try again.');
         }
 
-        return (alreadyAdded ? interaction.reply(`Successfully updated ${collectionSlug} with target price ${targetPrice}Ξ to monitor list.`) : interaction.reply(`Successfully added ${collectionSlug} with target price ${targetPrice}Ξ to monitor list.`))
+        let change = (alreadyAdded ? 'updated' : 'added');
+        return interaction.reply(`Successfully ${change} **${collectionSlug}** with target price ${targetPrice}Ξ to monitor list.`);
     },
 }

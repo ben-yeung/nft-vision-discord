@@ -17,7 +17,6 @@ module.exports = {
         const lenBefore = collections.length;
 
         collections = collections.filter(function (item) {
-            console.log(item.slug);
             return item.slug != collectionSlug
         });
         if (lenBefore == collections.length) return interaction.reply('Could not find collection in monitor list. Check for typos or use /getlist')
@@ -29,6 +28,6 @@ module.exports = {
             return interaction.reply('An error occurred. Please try again.');
         }
 
-        return interaction.reply(`Successfully removed ${collectionSlug} from monitor list.`)
+        return interaction.reply(`Successfully removed **${collectionSlug}** from monitor list.`)
     },
 }
