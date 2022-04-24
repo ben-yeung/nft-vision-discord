@@ -5,7 +5,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('setalerts')
         .setDescription('Set the current Guild\'s dedicated Alerts Channel. Must have admin perms: /setalerts [channel id]')
-        .addStringOption(option => option.setName('channel_id').setDescription('Enter a channel id to receive floor price alerts.')),
+        .addStringOption(option => option.setName('channel-id').setDescription('Enter a channel id to receive floor price alerts.')),
     permission: 'ADMINISTRATOR',
 
     async execute(interaction, args, client) {
@@ -18,12 +18,12 @@ module.exports = {
 
         try {
             const res = await guildSchema.findOneAndUpdate({ guild_id: interaction.guild.id }, { alerts_channel: newChannelID })
-            if (res == null) return interaction.reply('An error occurred. Please try again.')
+            if (res == null) return interaction.reply('An error occurred. Please try again.');
         } catch (err) {
-            return interaction.reply('An error occurred. Please try again.')
+            return interaction.reply('An error occurred. Please try again.');
         }
 
-        interaction.reply('Successfully updated alerts channel id.')
+        interaction.reply('Successfully updated alerts channel id.');
 
     },
 }

@@ -8,6 +8,10 @@ const collection_schema = new mongoose.Schema({
     target: {
         type: Number,
         required: true
+    },
+    check_above: {
+        type: Boolean,
+        required: true
     }
 });
 
