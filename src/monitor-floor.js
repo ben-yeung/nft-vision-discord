@@ -30,6 +30,7 @@ exports.monitor = async (client) => {
                 let collects = guildRes.collections;
                 for (let i = 0; i < collects.length; i++) {
                     let c = collects[i];
+                    console.log(`[Guild ${guild.id}]: Checking collection ${c.slug}`);
                     sdk['retrieving-a-single-collection']({ collection_slug: c.slug })
                         .then(async (res) => {
                             let stats = res.collection.stats;
@@ -45,8 +46,10 @@ exports.monitor = async (client) => {
                             let twitterUser = res.collection.twitter_username;
                             let openSea = 'https://opensea.io/collection/' + c.slug;
 
-                            let alert = (c.slug ? `**Target:** Above ${c.target}Ξ` : `**Target:** Below ${c.target}Ξ`)
-                            let desc = `${alert} \n\n [OpenSea](${openSea}) •`
+                            let checkAbove = Boolean(c.check_above);
+
+                            let alert = (checkAbove ? `**Target:** Above ${c.target}Ξ` : `**Target:** Below ${c.target}Ξ`)
+                            let desc = `${alert} \n\n [OpenSea](${openSea})`
                             if (discordURL) desc += ` • [Discord](${discordURL})`;
                             if (website) desc += ` • [Website](${website})`;
                             if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
@@ -61,9 +64,9 @@ exports.monitor = async (client) => {
                                 })
 
                             if (alertChannel) {
-                                if (c.check_above && currFloor > c.target && currFloor != c.last_check) {
+                                if (checkAbove && currFloor > c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
-                                } else if (!c.check_above && currFloor < c.target && currFloor != c.last_check) {
+                                } else if (!checkAbove && currFloor < c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
                                 }
                                 guildRes.collections[i].last_check = currFloor;

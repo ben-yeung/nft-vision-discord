@@ -28,7 +28,7 @@ module.exports = {
                 let twitterUser = res.collection.twitter_username;
                 let openSea = 'https://opensea.io/collection/' + res.collection.slug;
 
-                let desc = `**Floor Price:** ${currFloor}Ξ | **Total Volume:** ${totalVol.toFixed(0)}Ξ \n\n [OpenSea](${openSea})`
+                let desc = `**Floor Price:** ${currFloor}Ξ \n **Total Volume:** ${totalVol.toFixed(0)}Ξ \n\n [OpenSea](${openSea})`
                 if (discordURL) desc += ` • [Discord](${discordURL})`;
                 if (website) desc += ` • [Website](${website})`;
                 if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
@@ -43,7 +43,6 @@ module.exports = {
                     })
 
                 return interaction.reply({ embeds: [findEmbed] });
-
 
             })
             .catch(err => {

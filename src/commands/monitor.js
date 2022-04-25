@@ -37,7 +37,7 @@ module.exports = {
                             let openSea = 'https://opensea.io/collection/' + c.slug;
 
                             let alert = (c.slug ? `**Target:** Above ${c.target}Ξ` : `**Target:** Below ${c.target}Ξ`)
-                            let desc = `${alert} \n\n [OpenSea](${openSea}) •`
+                            let desc = `${alert} \n\n [OpenSea](${openSea})`
                             if (discordURL) desc += ` • [Discord](${discordURL})`;
                             if (website) desc += ` • [Website](${website})`;
                             if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;

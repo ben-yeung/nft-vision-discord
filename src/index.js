@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 const botconfig = require('./botconfig.json');
 const token = botconfig.TOKEN // Discord Bot Token
 const { initializeCommands } = require('./deploy');
+const { monitor } = require('./monitor-floor');
 const guildSchema = require('./schemas/guild-schema');
 const fs = require('fs');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.GUILD_PRESENCES] });
-const prefLen = botconfig.PREFIX.length;
 client.commands = new Collection();
 
 client.on('interactionCreate', async interaction => {
@@ -57,6 +57,8 @@ client.on('ready', async () => {
         }
     })
 
+
+    setInterval(function () { monitor(client) }, 60000);
     console.log(`${client.user.username} is online!`);
 })
 
