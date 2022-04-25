@@ -30,7 +30,6 @@ exports.monitor = async (client) => {
                 let collects = guildRes.collections;
                 for (let i = 0; i < collects.length; i++) {
                     let c = collects[i];
-                    console.log(`[Guild ${guild.id}]: Checking collection ${c.slug}`);
                     sdk['retrieving-a-single-collection']({ collection_slug: c.slug })
                         .then(async (res) => {
                             let stats = res.collection.stats;
@@ -63,6 +62,8 @@ exports.monitor = async (client) => {
                                     text: `Royalties: ${royalty}% | Total Supply: ${totalSupply} | Owners: ${numOwners}`
                                 })
 
+                            console.log(`[Guild ${guild.id}]: Checking collection ${c.slug} • Current Floor: ${currFloor}Ξ`);
+
                             if (alertChannel) {
                                 if (checkAbove && currFloor >= c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
@@ -70,6 +71,7 @@ exports.monitor = async (client) => {
                                     alertChannel.send({ embeds: [alertEmbed] })
                                 }
                                 guildRes.collections[i].last_check = currFloor;
+                                guildRes.collections[i].target = (checkAbove ? Math.max(currFloor, c.target) : Math.min(currFloor, c.target));
                                 const saveRes = await guildSchema.findOneAndUpdate({ guild_id: guild.id }, { collections: guildRes.collections })
                                 if (saveRes == null) console.log('Error occurred saving to mongoDB');
                             }
