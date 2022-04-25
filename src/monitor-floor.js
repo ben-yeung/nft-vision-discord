@@ -64,9 +64,9 @@ exports.monitor = async (client) => {
                                 })
 
                             if (alertChannel) {
-                                if (checkAbove && currFloor > c.target && currFloor != c.last_check) {
+                                if (checkAbove && currFloor >= c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
-                                } else if (!checkAbove && currFloor < c.target && currFloor != c.last_check) {
+                                } else if (!checkAbove && currFloor <= c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
                                 }
                                 guildRes.collections[i].last_check = currFloor;
