@@ -25,6 +25,9 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * Retrieve a summary of a collection.
   * Returns an embed containing total supply, owner count, royalties (OS royalty included), total volume, and floor price.
   * Plans on including 7 day volume summary, 1 day change, etc
+* **/summary** [WIP]
+  * View a comprehensive summary of the currently monitored projects that includes current floor price and 24hr volume activity.
+* TBA ...
 
 
 ## 🧰 Debugging / Notes
@@ -32,6 +35,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * This project utilizes mongoDB to support multi-guild functionality. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
 * Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
 * For production deployment see the file src/deploy.js for more information on how to register slash commands.
+* Due note that using the OpenSea API can become rate limited without an API Key. See more here [OpenSea Docs](https://docs.opensea.io/reference/retrieving-a-single-collection)
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
