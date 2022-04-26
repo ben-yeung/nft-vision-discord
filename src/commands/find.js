@@ -13,12 +13,18 @@ module.exports = {
 
         sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug') })
             .then(res => {
+                console.log(res);
 
                 let stats = res.collection.stats;
                 let currFloor = stats.floor_price;
                 let totalSupply = stats.total_supply;
                 let numOwners = stats.num_owners;
-                let totalVol = Number(stats.total_volume)
+                let totalVol = Number(stats.total_volume);
+                let totalSales = Number(stats.total_sales);
+                let oneDayVol = Number(stats.one_day_volume);
+                let oneDaySales = Number(stats.one_day_sales);
+                let sevenDayVol = Number(stats.seven_day_volume);
+                let sevenDaySales = Number(stats.seven_day_sales);
                 let royalty = (Number(res.collection.dev_seller_fee_basis_points) + Number(res.collection.opensea_seller_fee_basis_points)) / 100;
 
                 let name = res.collection.name;
@@ -28,7 +34,7 @@ module.exports = {
                 let twitterUser = res.collection.twitter_username;
                 let openSea = 'https://opensea.io/collection/' + res.collection.slug;
 
-                let desc = `**Floor Price:** ${currFloor}Ξ \n **Total Volume:** ${totalVol.toFixed(0)}Ξ \n\n [OpenSea](${openSea})`
+                let desc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) \n **Total Volume:** ${totalVol.toFixed(0)}Ξ (~$${client.convertETH(totalVol).toLocaleString("en-US")}) \n **Total Sales:** ${totalSales} \n\n **24H Volume:** ${oneDayVol.toFixed(0)}Ξ (~$${client.convertETH(oneDayVol).toLocaleString("en-US")}) \n **24H Sales:** ${oneDaySales} \n\n **7 Day Volume:** ${sevenDayVol.toFixed(0)}Ξ (~$${client.convertETH(sevenDayVol).toLocaleString("en-US")}) \n **7 Day Sales:** ${sevenDaySales} \n\n [OpenSea](${openSea})`
                 if (discordURL) desc += ` • [Discord](${discordURL})`;
                 if (website) desc += ` • [Website](${website})`;
                 if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;

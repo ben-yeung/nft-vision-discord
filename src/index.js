@@ -65,6 +65,10 @@ client.on('ready', async () => {
     await getEthPrice(client);
     setInterval(function () { getEthPrice(client) }, 60000);
 
+    client.convertETH = (num) => {
+        return Number((client.eth * num).toFixed(0));
+    }
+
     setInterval(function () { monitor(client) }, 60000);
     console.log(`${client.user.username} is online!`);
 })
