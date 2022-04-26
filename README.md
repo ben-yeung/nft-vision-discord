@@ -25,6 +25,12 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * Retrieve a summary of a collection.
   * Returns an embed containing total supply, owner count, royalties (OS royalty included), total volume, and floor price.
   * Plans on including 7 day volume summary, 1 day change, etc
+* **/eth [amount]**
+  * Get current ETH to USD conversion with an option for custom amounts.
+  * CoinGecko API
+* **/gas**
+  * Get current gas conditions (slow, market, and fast)
+  * Etherscan Gas Tracker API
 * **/summary** [WIP]
   * View a comprehensive summary of the currently monitored projects that includes current floor price and 24hr volume activity.
 * TBA ...
@@ -36,6 +42,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
 * For production deployment see the file src/deploy.js for more information on how to register slash commands.
 * Due note that using the OpenSea API can become rate limited without an API Key. See more here [OpenSea Docs](https://docs.opensea.io/reference/retrieving-a-single-collection)
+* The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here: [Etherscan API Docs](https://docs.etherscan.io/)
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
