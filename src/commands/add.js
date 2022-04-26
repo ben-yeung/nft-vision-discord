@@ -16,10 +16,13 @@ module.exports = {
         const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
         const lastCheckDefault = (interaction.options.getBoolean('above-target') == null ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
 
-        const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+        let res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        if (!res) {
+            await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+            res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        }
 
-        if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collectionsd.')
+        if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collections.')
 
         const newCollection = {
             slug: collectionSlug,

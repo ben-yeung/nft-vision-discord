@@ -57,6 +57,9 @@ client.on('ready', async () => {
         }
     })
 
+    client.user.setActivity('jpegs sell online', {
+        type: 'WATCHING'
+    });
 
     setInterval(function () { monitor(client) }, 60000);
     console.log(`${client.user.username} is online!`);

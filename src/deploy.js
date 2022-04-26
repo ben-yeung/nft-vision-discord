@@ -33,7 +33,7 @@ exports.initializeCommands = async (client) => {
     //     });
 
     // Use the line below to enable slash commands globally (Takes a while to cache) 
-    // await rest.put(Routes.applicationCommands(botconfig.CLIENT_ID), { body: commands });
+    await rest.put(Routes.applicationCommands(botconfig.CLIENT_ID), { body: commands });
 
     // Register with specific guild for testing/development
     await rest.put(Routes.applicationGuildCommands(botconfig.CLIENT_ID, botconfig.GUILD_ID), { body: commands })

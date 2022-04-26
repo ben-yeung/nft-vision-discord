@@ -11,8 +11,11 @@ module.exports = {
 
         const collectionSlug = interaction.options.getString('collection-slug');
 
-        const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+        let res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        if (!res) {
+            await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+            res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        }
 
         var collections = res.collections;
         const lenBefore = collections.length;

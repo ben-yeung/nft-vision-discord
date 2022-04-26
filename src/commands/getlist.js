@@ -10,8 +10,11 @@ module.exports = {
 
     async execute(interaction, args, client) {
 
-        const res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+        let res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        if (!res) {
+            await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+            res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+        }
 
         const collections = res.collections;
         let compiledStr = '';
