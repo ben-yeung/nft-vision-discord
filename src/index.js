@@ -4,6 +4,7 @@ const botconfig = require('./botconfig.json');
 const token = botconfig.TOKEN // Discord Bot Token
 const { initializeCommands } = require('./deploy');
 const { monitor } = require('./monitor-floor');
+const { getEthPrice } = require('./get-eth-price');
 const guildSchema = require('./schemas/guild-schema');
 const fs = require('fs');
 
@@ -60,6 +61,9 @@ client.on('ready', async () => {
     client.user.setActivity('jpegs sell online', {
         type: 'WATCHING'
     });
+
+    await getEthPrice(client);
+    setInterval(function () { getEthPrice(client) }, 60000);
 
     setInterval(function () { monitor(client) }, 60000);
     console.log(`${client.user.username} is online!`);
