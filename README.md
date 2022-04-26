@@ -31,6 +31,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
 * This project utilizes mongoDB to support multi-guild functionality. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
 * Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
+* For production deployment see the file src/deploy.js for more information on how to register slash commands.
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
