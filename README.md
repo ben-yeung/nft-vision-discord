@@ -19,7 +19,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/getlist**
   * View the list of monitored collections as well as the current target prices set for each respective collection.
 * **/setalerts [channel-id]**
-  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms
+  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms.
   * If this is not set then the guild will not receive alerts. Other functions such as /find will still function.
 * **/find [collection-slug]**
   * Retrieve a summary of a collection.
@@ -27,22 +27,28 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * Plans on including 7 day volume summary, 1 day change, etc
 * **/eth [amount]**
   * Get current ETH to USD conversion with an option for custom amounts.
-  * CoinGecko API
+  * CoinGecko API see below for more details.
 * **/gas**
   * Get current gas conditions (slow, market, and fast)
   * Etherscan Gas Tracker API
-* **/summary** [WIP]
-  * View a comprehensive summary of the currently monitored projects that includes current floor price and 24hr volume activity.
+* **/summary**
+  * View a comprehensive summary of the currently monitored collections.
+  * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
+* **/clear**
+  * Clears the list of monitored collections. Requires Administrator perms.
 * TBA ...
 
+## 📸 Command Previews
+Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 
 ## 🧰 Debugging / Notes
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
 * This project utilizes mongoDB to support multi-guild functionality. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
 * Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
 * For production deployment see the file src/deploy.js for more information on how to register slash commands.
-* Due note that using the OpenSea API can become rate limited without an API Key. See more here [OpenSea Docs](https://docs.opensea.io/reference/retrieving-a-single-collection)
-* The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here: [Etherscan API Docs](https://docs.etherscan.io/)
+* Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
+* The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
+* ETH conversion is dependent on CoinGecko's API. See more here [CoinGecko Docs](https://www.coingecko.com/en/api/documentation)
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
