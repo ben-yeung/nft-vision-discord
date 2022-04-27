@@ -19,7 +19,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/getlist**
   * View the list of monitored collections as well as the current target prices set for each respective collection.
 * **/setalerts [channel-id]**
-  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms
+  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms.
   * If this is not set then the guild will not receive alerts. Other functions such as /find will still function.
 * **/find [collection-slug]**
   * Retrieve a summary of a collection.
@@ -27,17 +27,19 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * Plans on including 7 day volume summary, 1 day change, etc
 * **/eth [amount]**
   * Get current ETH to USD conversion with an option for custom amounts.
-  * CoinGecko API
+  * CoinGecko API see below for more details.
 * **/gas**
   * Get current gas conditions (slow, market, and fast)
   * Etherscan Gas Tracker API
-* **/summary** [WIP]
-  * View a comprehensive summary of the currently monitored projects that includes current floor price and 24hr volume activity.
+* **/summary**
+  * View a comprehensive summary of the currently monitored collections.
+  * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
+* **/clear**
+  * Clears the list of monitored collections. Requires Administrator perms.
 * TBA ...
 
 ## 📸 Command Previews
 Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
-
 
 ## 🧰 Debugging / Notes
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
