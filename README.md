@@ -46,7 +46,7 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 * For production deployment see the file src/deploy.js for more information on how to register slash commands.
 * Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
 * The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
-* ETH conversion is dependent on CoinGecko's API. See more here [](https://www.coingecko.com/en/api/documentation)
+* ETH conversion is dependent on CoinGecko's API. See more here [CoinGecko Docs](https://www.coingecko.com/en/api/documentation)
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
