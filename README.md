@@ -35,6 +35,9 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * View a comprehensive summary of the currently monitored projects that includes current floor price and 24hr volume activity.
 * TBA ...
 
+## 📸 Command Previews
+Previews are stored on imgur. <a href="https://imgur.com/a/ZXg0FPc" target="_blank">Visit imgur</a>
+
 
 ## 🧰 Debugging / Notes
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
