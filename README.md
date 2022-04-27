@@ -36,7 +36,7 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * TBA ...
 
 ## 📸 Command Previews
-Previews are stored on imgur. <a href="https://imgur.com/a/ZXg0FPc" target="_blank">Visit imgur</a>
+Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 
 
 ## 🧰 Debugging / Notes
