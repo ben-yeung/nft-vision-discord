@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { collection } = require('../schemas/guild-schema');
 const guildSchema = require('../schemas/guild-schema');
+const sdk = require('api')('@opensea/v1.0#bg4ikl1mk428b');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,47 +14,57 @@ module.exports = {
     async execute(interaction, args, client) {
 
         const collectionSlug = interaction.options.getString('collection-slug');
-        const targetPrice = interaction.options.getNumber('target-price');
-        const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
-        const lastCheckDefault = (interaction.options.getBoolean('above-target') == null ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
 
-        let res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        if (!res) {
-            await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
-            res = await guildSchema.findOne({ guild_id: interaction.guild.id });
-        }
+        await sdk['retrieving-a-single-collection']({ collection_slug: collectionSlug })
+            .then(async () => {
+                const targetPrice = interaction.options.getNumber('target-price');
+                const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));
+                const lastCheckDefault = (interaction.options.getBoolean('above-target') == null ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
 
-        if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collections.')
+                let res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+                if (!res) {
+                    await new guildSchema({ guild_id: interaction.guild.id, guild_name: interaction.guild.name, alerts_channel: '' }).save();
+                    res = await guildSchema.findOne({ guild_id: interaction.guild.id });
+                }
 
-        const newCollection = {
-            slug: collectionSlug,
-            target: targetPrice,
-            check_above: checkAbove,
-            last_check: lastCheckDefault
-        }
+                if (res.alerts_channel == '') return interaction.reply('Please setup an alerts channel first with /setalerts in order to monitor collections.')
 
-        var collections = res.collections;
-        var alreadyAdded = false;
+                const newCollection = {
+                    slug: collectionSlug,
+                    target: targetPrice,
+                    check_above: checkAbove,
+                    last_check: lastCheckDefault
+                }
 
-        for (var i = 0; i < collections.length; i++) {
-            if (collections[i].slug == collectionSlug) { // If collection exists in list already, update the values
-                collections[i] = newCollection;
-                alreadyAdded = true;
-            }
-        }
+                var collections = res.collections;
+                var alreadyAdded = false;
 
-        if (!alreadyAdded) { // Else if collection does not exist, add it to the list
-            collections.push(newCollection);
-        }
+                for (var i = 0; i < collections.length; i++) {
+                    if (collections[i].slug == collectionSlug) { // If collection exists in list already, update the values
+                        collections[i] = newCollection;
+                        alreadyAdded = true;
+                    }
+                }
 
-        try {
-            const res = await guildSchema.findOneAndUpdate({ guild_id: interaction.guild.id }, { collections: collections })
-            if (res == null) return interaction.reply('An error occurred. Please try again.');
-        } catch (err) {
-            return interaction.reply('An error occurred. Please try again.');
-        }
+                if (!alreadyAdded) { // Else if collection does not exist, add it to the list
+                    collections.push(newCollection);
+                }
 
-        let change = (alreadyAdded ? 'updated' : 'added');
-        return interaction.reply(`Successfully ${change} **${collectionSlug}** with target price ${targetPrice}Ξ to monitor list.`);
+                try {
+                    const res = await guildSchema.findOneAndUpdate({ guild_id: interaction.guild.id }, { collections: collections })
+                    if (res == null) return interaction.reply('An error occurred. Please try again.');
+                } catch (err) {
+                    return interaction.reply('An error occurred. Please try again.');
+                }
+
+                let change = (alreadyAdded ? 'updated' : 'added');
+                return interaction.reply(`Successfully ${change} **${collectionSlug}** with target price ${targetPrice}Ξ to monitor list.`);
+            })
+            .catch(err => {
+                console.log(err);
+                return interaction.reply('Error: Collection does not exist with given slug or API Rate limit. Please try again in a moment.')
+            });
+
+
     },
 }
