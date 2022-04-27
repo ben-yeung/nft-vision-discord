@@ -12,7 +12,7 @@ module.exports = {
     options: '[amount]',
     async execute(interaction, args, client) {
         let input = Number(interaction.options.getString('amount'));
-        let converted = Number((input * client.eth).toFixed(2)).toLocaleString('en-us');
+        let converted = Number((input * client.eth).toFixed(0)).toLocaleString('en-us');
 
         let embed = new Discord.MessageEmbed()
             .setTitle(`ETH to USD ($${client.eth})`)
