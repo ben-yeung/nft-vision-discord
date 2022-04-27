@@ -13,7 +13,7 @@ async function buildDesc(client, collects) {
             let res = await sdk['retrieving-a-single-collection']({ collection_slug: c.slug });
 
             let stats = res.collection.stats;
-            let currFloor = stats.floor_price;
+            let currFloor = Number(stats.floor_price.toFixed(4));
             let oneDayVol = Number((stats.one_day_volume).toFixed(0));
             let oneDaySales = Number(stats.one_day_sales.toLocaleString("en-US"));
             let royalty = (Number(res.collection.dev_seller_fee_basis_points) + Number(res.collection.opensea_seller_fee_basis_points)) / 10000;

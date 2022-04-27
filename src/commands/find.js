@@ -16,7 +16,7 @@ module.exports = {
                 console.log(res);
 
                 let stats = res.collection.stats;
-                let currFloor = stats.floor_price;
+                let currFloor = Number(stats.floor_price.toFixed(4));
                 let totalSupply = stats.total_supply;
                 let numOwners = stats.num_owners;
                 let totalVol = Number((stats.total_volume).toFixed(0));

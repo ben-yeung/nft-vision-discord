@@ -21,7 +21,7 @@ async function clearList(interaction) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('clear')
-        .setDescription('Clear the entire monitor list of collections.'),
+        .setDescription('Clear the entire monitor list of collections. Must have admin perms.'),
     permission: 'ADMINISTRATOR',
     options: '',
     async execute(interaction, args, client) {
