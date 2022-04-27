@@ -44,8 +44,9 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 * This project utilizes mongoDB to support multi-guild functionality. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
 * Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
 * For production deployment see the file src/deploy.js for more information on how to register slash commands.
-* Due note that using the OpenSea API can become rate limited without an API Key. See more here [OpenSea Docs](https://docs.opensea.io/reference/retrieving-a-single-collection)
-* The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here: [Etherscan API Docs](https://docs.etherscan.io/)
+* Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
+* The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
+* ETH conversion is dependent on CoinGecko's API. See more here [](https://www.coingecko.com/en/api/documentation)
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
