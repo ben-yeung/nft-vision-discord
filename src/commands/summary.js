@@ -45,21 +45,22 @@ module.exports = {
             // If guild is in mongoDB, check collections and accumulate summary
             // Else continue
             if (guildRes) {
+                await interaction.reply({ content: 'Checking collections...', embeds: [] })
                 let collects = guildRes.collections;
 
-                buildDesc(client, collects).then((desc) => {
+                let desc = await buildDesc(client, collects);
 
-                    if (desc == '') desc = 'OpenSea API rate limited or collection not found. Please check slugs for typos or try again.'
+                if (desc == '') desc = 'OpenSea API rate limited or collection not found. Please check slugs for typos or try again.'
 
-                    let embed = new Discord.MessageEmbed()
-                        .setTitle('Summary')
-                        .setDescription(desc)
-                        .setColor(44774)
-                        .setTimestamp()
+                let embed = new Discord.MessageEmbed()
+                    .setTitle('Summary')
+                    .setDescription(desc)
+                    .setColor(44774)
+                    .setTimestamp()
 
-                    return interaction.reply({ embeds: [embed] });
-                }).catch(err => console.log(err))
-
+                await interaction.editReply({ content: ' ­', embeds: [embed] });
+            } else {
+                return interaction.reply('Error occurred. Please try again in a moment.')
             }
 
         } catch (err) {
