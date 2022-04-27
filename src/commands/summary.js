@@ -49,7 +49,7 @@ module.exports = {
 
                 buildDesc(client, collects).then((desc) => {
 
-                    if (desc == '') desc = 'OpenSea API rate limited. Please try again later.'
+                    if (desc == '') desc = 'OpenSea API rate limited or collection not found. Please check slugs for typos or try again.'
 
                     let embed = new Discord.MessageEmbed()
                         .setTitle('Summary')
