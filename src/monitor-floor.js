@@ -30,7 +30,7 @@ exports.monitor = async (client) => {
                 let collects = guildRes.collections;
                 for (let i = 0; i < collects.length; i++) {
                     let c = collects[i];
-                    sdk['retrieving-a-single-collection']({ collection_slug: c.slug })
+                    sdk['retrieving-a-single-collection']({ collection_slug: c.slug, 'X-API-KEY': client.OS_KEY })
                         .then(async (res) => {
                             let stats = res.collection.stats;
                             let currFloor = stats.floor_price;

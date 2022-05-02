@@ -14,7 +14,7 @@ module.exports = {
 
         let amount = interaction.options.getNumber('amount');
 
-        sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug') })
+        sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug'), 'X-API-KEY': client.OS_KEY })
             .then(res => {
                 let stats = res.collection.stats;
                 let totalSupply = stats.total_supply;

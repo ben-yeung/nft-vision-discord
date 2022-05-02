@@ -62,6 +62,10 @@ client.on('ready', async () => {
         type: 'WATCHING'
     });
 
+    // See here for more details on how to get an OpenSea API Key
+    // https://docs.opensea.io/reference/request-an-api-key
+    client.OS_KEY = (botconfig.OS_API_KEY ? botconfig.OS_API_KEY : '');
+
     await getEthPrice(client);
     setInterval(function () { getEthPrice(client) }, 60000);
 

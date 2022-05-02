@@ -10,7 +10,7 @@ async function buildDesc(client, collects) {
         let c = collects[i];
 
         try {
-            let res = await sdk['retrieving-a-single-collection']({ collection_slug: c.slug });
+            let res = await sdk['retrieving-a-single-collection']({ collection_slug: c.slug, 'X-API-KEY': client.OS_KEY });
 
             let stats = res.collection.stats;
             let currFloor = Number(stats.floor_price.toFixed(4));

@@ -15,7 +15,7 @@ module.exports = {
 
         const collectionSlug = interaction.options.getString('collection-slug');
 
-        await sdk['retrieving-a-single-collection']({ collection_slug: collectionSlug })
+        await sdk['retrieving-a-single-collection']({ collection_slug: collectionSlug, 'X-API-KEY': client.OS_KEY })
             .then(async () => {
                 const targetPrice = interaction.options.getNumber('target-price');
                 const checkAbove = (interaction.options.getBoolean('above-target') == null ? true : interaction.options.getBoolean('above-target'));

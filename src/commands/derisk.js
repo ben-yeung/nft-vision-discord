@@ -5,27 +5,26 @@ const sdk = require('api')('@opensea/v1.0#bg4ikl1mk428b');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('find')
-        .setDescription('Retrieve information for a given collection. View stats, royalties, fp, etc')
-        .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true)),
-    options: '[collection-slug]',
+        .setName('derisk')
+        .setDescription('Calculate the minimum amount of ETH to list an NFT in order to receive exactly what you paid for it.')
+        .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true))
+        .addNumberOption(option => option.setName('amount').setDescription('Price bought for. Include gas fees for best estimate.').setRequired(true)),
+    options: '[collection-slug] [amount]',
     async execute(interaction, args, client) {
+
+        let amount = interaction.options.getNumber('amount');
+        if (amount < 0) return interaction.reply("Not a valid amount. Can't be negative!")
 
         sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug'), 'X-API-KEY': client.OS_KEY })
             .then(res => {
-
                 let stats = res.collection.stats;
-                let currFloor = Number(stats.floor_price.toFixed(4));
                 let totalSupply = stats.total_supply;
                 let numOwners = stats.num_owners;
-                let totalVol = Number((stats.total_volume).toFixed(0));
-                let totalSales = Number(stats.total_sales).toLocaleString("en-US");
-                let oneDayVol = Number((stats.one_day_volume).toFixed(0));
-                let oneDaySales = Number(stats.one_day_sales.toLocaleString("en-US"));
-                let sevenDayVol = Number((stats.seven_day_volume).toFixed(0));
-                let sevenDaySales = Number(stats.seven_day_sales).toLocaleString("en-US");
+                let currFloor = Number(stats.floor_price.toFixed(4));
                 let royalty = (Number(res.collection.dev_seller_fee_basis_points) + Number(res.collection.opensea_seller_fee_basis_points)) / 100;
-
+                let deriskListing = Number((amount / (1 - (royalty / 100))).toFixed(4));
+                let afterFees = Number((currFloor * (1 - (royalty / 100))).toFixed(4));
+                let profits = Number((afterFees - amount)).toFixed(4);
                 let name = res.collection.name;
                 let imageThumb = res.collection.image_url;
                 let discordURL = res.collection.discord_url;
@@ -33,7 +32,9 @@ module.exports = {
                 let twitterUser = res.collection.twitter_username;
                 let openSea = 'https://opensea.io/collection/' + res.collection.slug;
 
-                let desc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) \n **Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(totalVol).toLocaleString("en-US")}) \n **Total Sales:** ${totalSales} \n\n **24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayVol).toLocaleString("en-US")}) \n **24H Sales:** ${oneDaySales} \n\n **7 Day Volume:** ${sevenDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(sevenDayVol).toLocaleString("en-US")}) \n **7 Day Sales:** ${sevenDaySales} \n\n [OpenSea](${openSea})`
+                let desc = `**If you bought for a total of** ${amount}Ξ (~$${client.convertETH(amount).toLocaleString("en-US")}) \n **To sell for break even list at** ${deriskListing}Ξ (~$${client.convertETH(deriskListing).toLocaleString("en-US")}) \n
+                            **If you sold at current floor** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) \n **You would receive** ${afterFees.toLocaleString("en-US")}Ξ (~$${client.convertETH(afterFees).toLocaleString("en-US")}) \n **Current floor nets** ${profits}Ξ (~$${client.convertETH(profits).toLocaleString("en-US")}) in profit. \n
+                            Use /royalty [slug] [amount] \n to view custom sell targets after fees. \n\n [OpenSea](${openSea})`
                 if (discordURL) desc += ` • [Discord](${discordURL})`;
                 if (website) desc += ` • [Website](${website})`;
                 if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
