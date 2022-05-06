@@ -36,6 +36,13 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
 * **/clear**
   * Clears the list of monitored collections. Requires Administrator perms.
+* **/derisk [collection-slug] \[amount]**
+* A personal favorite of mine amongst the other commands
+* The amount specified is the price you spent / want to spend.
+* The command returns the price to list at in order to break even after royalties (assuming your price inputted includes gas fees)
+* It also calculates the current profits based on the floor price when the command was pinged both negative and positive.
+* Assess your risk and derisk as necessary with ease.
+* 
 * TBA ...
 
 ## 📸 Command Previews
