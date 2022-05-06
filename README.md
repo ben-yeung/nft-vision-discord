@@ -37,12 +37,12 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/clear**
   * Clears the list of monitored collections. Requires Administrator perms.
 * **/derisk [collection-slug] \[amount]**
-* A personal favorite of mine amongst the other commands
-* The amount specified is the price you spent / want to spend.
-* The command returns the price to list at in order to break even after royalties (assuming your price inputted includes gas fees)
-* It also calculates the current profits based on the floor price when the command was pinged both negative and positive.
-* Assess your risk and derisk as necessary with ease.
-* 
+  * A personal favorite of mine amongst the other commands
+  * The amount specified is the price you spent / want to spend.
+  * The command returns the price to list at in order to break even after royalties (assuming your price inputted includes gas fees)
+  * It also calculates the current profits based on the floor price when the command was pinged both negative and positive.
+  * Assess your risk and derisk as necessary with ease.
+  * In a future update for this command I hope to be able to support transaction hash/ids to automatically pull the amount spent in order to calculate risk.
 * TBA ...
 
 ## 📸 Command Previews
