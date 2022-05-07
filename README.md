@@ -16,35 +16,39 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   *  The "Above?" parameter allows for users to monitor sell targets or buy in targets.
 * **/remove [collection-slug]**
   *  Remove a collection from the monitor list.
-* **/getlist**
-  * View the list of monitored collections as well as the current target prices set for each respective collection.
-* **/setalerts [channel-id]**
-  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms.
-  * If this is not set then the guild will not receive alerts. Other functions such as /find will still function.
-* **/find [collection-slug]**
-  * Retrieve a summary of a collection.
-  * Returns an embed containing total supply, owner count, royalties (OS royalty included), total volume, and floor price.
-  * Plans on including 7 day volume summary, 1 day change, etc
-* **/eth [amount]**
-  * Get current ETH to USD conversion with an option for custom amounts.
-  * CoinGecko API see below for more details.
-* **/gas**
-  * Get current gas conditions (slow, market, and fast)
-  * Etherscan Gas Tracker API
-* **/summary**
-  * View a comprehensive summary of the currently monitored collections.
-  * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
-* **/clear**
-  * Clears the list of monitored collections. Requires Administrator perms.
 * **/derisk [collection-slug] \[amount]**
   * Assess your risk and derisk as necessary with ease.
   * The amount specified is the price you spent / want to spend.
-  * The command returns the price to list at in order to break even after royalties and current floor price profit margins.
-  * In a future update for this command I hope to be able to support transaction hash/ids to automatically pull the amount spent in order to calculate risk.
+  * The command returns the price to list at in order to break even and calculates current floor price profit margins.
+* **/find [collection-slug]**
+  * Retrieve a summary of a collection.
+  * Returns an embed containing total supply, owner count, royalties (OS royalty included), total volume, and floor price.
+* **/eth [amount]**
+  * Get current ETH to USD conversion with an option for custom amounts.
+  * CoinGecko API see the "Debugging" section for more details.
+* **/gas**
+  * Get current gas conditions (slow, market, and fast)
+  * Etherscan Gas Tracker API implementation.
+* **/summary**
+  * View a comprehensive summary of the currently monitored collections.
+  * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
+* **/getlist**
+  * View the list of monitored collections as well as the current target prices set for each respective collection.
+* **/clear**
+  * Clears the list of monitored collections. Requires Administrator perms.
+* **/setalerts [channel-id]**
+  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms.
+  * If this is not set then the guild will not receive alerts. Other functions such as /find will still function.
 * TBA ...
 
 ## 📸 Command Previews
 Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
+
+## 📅 Future Updates / Roadmap Ahead
+* For the various statistics I plan on adding more details such as 7 day and 30 day volume. Curently curating feedback from the servers I provide for to get critique on how the data is displayed within a Discord server.
+* For the derisk commands I plan on adding support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk accordingly all with only the transaction id.
+* Wallet watching commands for when notable wallets buy/sell monitored collections.
+* Integrate some of the smart contract scraping from my previous projects to be supported by commands.
 
 ## 🧰 Debugging / Notes
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
