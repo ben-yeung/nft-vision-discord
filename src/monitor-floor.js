@@ -70,8 +70,8 @@ exports.monitor = async (client) => {
                                 } else if (!checkAbove && currFloor <= c.target && currFloor != c.last_check) {
                                     alertChannel.send({ embeds: [alertEmbed] })
                                 }
+
                                 guildRes.collections[i].last_check = currFloor;
-                                guildRes.collections[i].target = (checkAbove ? Math.max(currFloor, c.target) : Math.min(currFloor, c.target));
                                 const saveRes = await guildSchema.findOneAndUpdate({ guild_id: guild.id }, { collections: guildRes.collections })
                                 if (saveRes == null) console.log('Error occurred saving to mongoDB');
                             }
