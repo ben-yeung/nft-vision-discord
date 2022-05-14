@@ -13,9 +13,9 @@ exports.getAsset = async (client, collection_slug, token_id) => {
 
     return new Promise((resolve, reject) => {
 
-        if (!client.OS_KEY) return { status: 404, reason: 'No OS API Key found.' };
-        if (!collection_slug) return { status: 404, reason: 'No collection slug given.' };
-        if (!token_id) return { status: 404, reason: 'No token id given.' };
+        if (!client.OS_KEY) reject({ status: 404, reason: 'No OS API Key found.' });
+        if (!collection_slug) reject({ status: 404, reason: 'No collection slug given.' });
+        if (!token_id) reject({ status: 404, reason: 'No token id given.' });
 
         // Find contract address from collection slug to pass into asset retrieve call
         sdk['retrieving-a-single-collection']({ collection_slug: collection_slug })
