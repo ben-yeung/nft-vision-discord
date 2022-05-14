@@ -10,27 +10,39 @@ const sdk = require('api')('@opensea/v1.0#595ks1ol33d7wpk');
  */
 
 exports.getAsset = async (client, collection_slug, token_id) => {
-    if (!client.OS_KEY) return { status: 404, reason: 'No OS API Key found.' };
-    if (!collection_slug) return { status: 404, reason: 'No collection slug given.' };
-    if (!token_id) return { status: 404, reason: 'No token id given.' };
 
-    let collection_contract = '';
+    return new Promise((resolve, reject) => {
 
-    // Find contract address from collection slug to pass into asset retrieve call
-    sdk['retrieving-a-single-collection']({ collection_slug: collection_slug })
-        .then(async (res) => {
+        if (!client.OS_KEY) return { status: 404, reason: 'No OS API Key found.' };
+        if (!collection_slug) return { status: 404, reason: 'No collection slug given.' };
+        if (!token_id) return { status: 404, reason: 'No token id given.' };
 
-        }).catch(err => {
-            console.log(err);
-            return { status: 404, reason: 'No collection found with that slug.' }
-        });;
+        // Find contract address from collection slug to pass into asset retrieve call
+        sdk['retrieving-a-single-collection']({ collection_slug: collection_slug })
+            .then(async (res) => {
 
-    sdk['retrieving-a-single-asset']({
-        include_orders: 'false',
-        asset_contract_address: '0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb',
-        token_id: '1'
+                let collection_contract = res.collection.primary_asset_contracts[0].address;
+
+                if (!collection_contract) reject({ status: 400, reason: 'Error finding collection contract.' });
+
+                // Make asset call. Requires API Key!
+                sdk['retrieving-a-single-asset']({
+                    'X-API-KEY': client.OS_KEY,
+                    include_orders: 'false',
+                    asset_contract_address: collection_contract,
+                    token_id: token_id
+                })
+                    .then(res => {
+                        resolve({ status: 200, assetObject: res });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        reject({ status: 400, reason: 'Error fetching asset. Double check token id.' });
+                    });
+
+            }).catch(err => {
+                console.log(err);
+                reject({ status: 404, reason: 'No collection found with that slug.' });
+            });;
     })
-        .then(res => console.log(res))
-        .catch(err => console.error(err));
-
 }

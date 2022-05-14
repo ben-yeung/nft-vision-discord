@@ -42,8 +42,6 @@ module.exports = {
         sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug') })
             .then(async (res) => {
 
-                console.log(res.collection.primary_asset_contracts);
-
                 let stats = res.collection.stats;
                 let currFloor = Number(stats.floor_price.toFixed(4));
                 let totalSupply = stats.total_supply;
