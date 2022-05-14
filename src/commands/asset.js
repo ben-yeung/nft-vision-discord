@@ -46,6 +46,12 @@ module.exports = {
             try {
                 let asset = res.assetObject;
                 let image_url = asset.image_url;
+                var animated = false;
+                var animation_url = 'False';
+                if (asset.animation_url) {
+                    animated = true;
+                    animation_url = `True • [View](${asset.animation_url})`;
+                }
                 let name = asset.name;
                 let num_sales = (asset.num_sales ? String(asset.num_sales) : '0');
                 var last_sale = 'None';
@@ -94,6 +100,7 @@ module.exports = {
                     .setTitle(`${name}`)
                     .setURL(OS_link)
                     .setDescription(traitDesc)
+                    .addField('Animated?', animation_url)
                     .setThumbnail(image_url)
                     .setFooter({ text: `${collection} • Token ${token_id}` })
                     .setColor(44774)
