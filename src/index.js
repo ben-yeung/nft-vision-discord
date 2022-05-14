@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const botconfig = require('./botconfig.json');
 const token = botconfig.TOKEN // Discord Bot Token
 const { initializeCommands } = require('./deploy');
-const { monitor } = require('./monitor-floor');
-const { getEthPrice } = require('./get-eth-price');
+const { monitor } = require('./helpers/monitor-floor');
+const { getEthPrice } = require('./helpers/get-eth-price');
 const guildSchema = require('./schemas/guild-schema');
 const fs = require('fs');
 

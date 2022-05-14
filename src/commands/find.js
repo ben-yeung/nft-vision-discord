@@ -39,8 +39,10 @@ module.exports = {
             pruneQueries(interaction.user);
         }
 
-        sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug'), 'X-API-KEY': client.OS_KEY })
+        sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug') })
             .then(async (res) => {
+
+                console.log(res.collection.primary_asset_contracts);
 
                 let stats = res.collection.stats;
                 let currFloor = Number(stats.floor_price.toFixed(4));
@@ -54,7 +56,6 @@ module.exports = {
                 let sevenDayVol = Number((stats.seven_day_volume).toFixed(0));
                 let sevenDayAvg = Number((stats.seven_day_average_price).toFixed(4));
                 let sevenDaySales = Number(stats.seven_day_sales).toLocaleString("en-US");
-
                 let thirtyDayVol = Number((stats.thirty_day_volume).toFixed(0));
                 let thirtyDayAvg = Number((stats.thirty_day_average_price).toFixed(4));
                 let thirtyDaySales = Number(stats.thirty_day_sales).toLocaleString("en-US");
@@ -62,11 +63,14 @@ module.exports = {
 
                 let name = res.collection.name;
                 let imageThumb = res.collection.image_url;
+                let contract = 'https://etherscan.io/address/' + res.collection.primary_asset_contracts[0].address;
                 let discordURL = res.collection.discord_url;
                 let website = res.collection.external_url;
                 let twitterUser = res.collection.twitter_username;
                 let openSea = 'https://opensea.io/collection/' + res.collection.slug;
                 let socials = '';
+
+                socials += `[OpenSea](${openSea}) • [Etherscan](${contract})`
 
                 let detailedDesc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) 
                                     \n **Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(totalVol).toLocaleString("en-US")}) 
@@ -80,7 +84,7 @@ module.exports = {
                                     \n **30 Day Volume:** ${thirtyDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(thirtyDayVol).toLocaleString("en-US")}) 
                                     **30 Day Floor Avg:** ${thirtyDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(thirtyDayAvg).toLocaleString("en-US")}) 
                                     **30 Day Sales:** ${thirtyDaySales} 
-                                    \n [OpenSea](${openSea})`
+                                    \n`
 
 
                 let desc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) 
@@ -89,7 +93,7 @@ module.exports = {
                             \n **24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayVol).toLocaleString("en-US")}) 
                             **24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayAvg).toLocaleString("en-US")}) 
                             **24H Sales:** ${oneDaySales} 
-                            \n [OpenSea](${openSea})`
+                            \n`
 
                 if (discordURL) socials += ` • [Discord](${discordURL})`;
                 if (website) socials += ` • [Website](${website})`;
@@ -190,6 +194,7 @@ module.exports = {
             })
             .catch(err => {
                 console.log(err);
+                db.delete(`${interaction.user.id}.findstarted`)
                 return interaction.reply('Error while searching for collection. Check for typos or try again.')
             });
 

@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
-const botconfig = require('./botconfig.json');
-const guildSchema = require('./schemas/guild-schema');
+const botconfig = require('../botconfig.json');
+const guildSchema = require('../schemas/guild-schema');
 const sdk = require('api')('@opensea/v1.0#bg4ikl1mk428b');
 
 /**
@@ -30,7 +30,7 @@ exports.monitor = async (client) => {
                 let collects = guildRes.collections;
                 for (let i = 0; i < collects.length; i++) {
                     let c = collects[i];
-                    sdk['retrieving-a-single-collection']({ collection_slug: c.slug, 'X-API-KEY': client.OS_KEY })
+                    sdk['retrieving-a-single-collection']({ collection_slug: c.slug })
                         .then(async (res) => {
                             let stats = res.collection.stats;
                             let currFloor = stats.floor_price;

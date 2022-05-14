@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const axios = require('axios');
-const botconfig = require('./botconfig.json');
-const guildSchema = require('./schemas/guild-schema');
+const botconfig = require('../botconfig.json');
+const guildSchema = require('../schemas/guild-schema');
 
 /**
  * Function for retrieving ETH's current price in USD. Used to translate ETH prices in embeds.

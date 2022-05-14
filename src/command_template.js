@@ -11,12 +11,6 @@ module.exports = {
     options: '',
     async execute(interaction, args, client) {
 
-
-        let embed = new Discord.MessageEmbed()
-            .addField('Slow 🐢', `${json.result.SafeGasPrice} gwei`, true)
-            .addField('Market 🚶', `${json.result.ProposeGasPrice} gwei`, true)
-            .addField('Fast ⚡', `${json.result.FastGasPrice} gwei`, true)
-
         return interaction.reply(':)');
 
     },
