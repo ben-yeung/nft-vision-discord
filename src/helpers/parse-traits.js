@@ -12,8 +12,6 @@ exports.parseTraits = async (client, traits) => {
 
     return new Promise((resolve, reject) => {
 
-        console.log(traits)
-
         if (!traits) reject({ status: 404, reason: 'No traits given.' })
 
         let traitDesc = '';

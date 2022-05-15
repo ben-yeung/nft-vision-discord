@@ -16,7 +16,7 @@ module.exports = {
         let token_id = interaction.options.getString('token-id');
 
         let res = await getAsset(client, slug, token_id);
-        console.log(res);
+        // console.log(res);
 
         return interaction.reply(':)');
 
