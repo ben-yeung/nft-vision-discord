@@ -74,7 +74,6 @@ exports.getAsset = async (client, collection_slug, token_id) => {
                                                 const salesJSON = JSON.parse(body);
                                                 let salesHistory = salesJSON.asset_events;
                                                 salesHistory.sort((a, b) => ((Number(a.total_price) * Number(a.payment_token.usd_price)) < (Number(b.total_price) * Number(b.payment_token.usd_price))) ? 1 : -1);
-                                                console.log(salesHistory)
 
                                                 resolve({ status: 200, assetObject: res, listings: listingsJSON, bids: bids, sales: salesHistory }); // Complete payload
                                             } else {

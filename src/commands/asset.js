@@ -64,7 +64,7 @@ module.exports = {
                     let price_sold = asset.last_sale.total_price / Math.pow(10, 18);
                     var date = new Date(`${(asset.last_sale.event_timestamp).substring(0, 10)} 00:00`);
                     last_sale_date = `(${Number(date.getMonth()) + 1}/${date.getDate()}/${date.getFullYear()})`;
-                    let usd = `$${(Number(price_sold) * Number(asset.last_sale.payment_token.usd_price)).toFixed(2)}`;
+                    let usd = `$${Number((Number(price_sold) * Number(asset.last_sale.payment_token.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
 
                     switch (asset.last_sale.payment_token.symbol) {
                         case 'ETH':
@@ -92,12 +92,12 @@ module.exports = {
                             symbol = ' ' + listings[0].payment_token_contract.symbol;
                             break;
                     }
-                    let usd = `$${(Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price)).toFixed(2).toLocaleString('en-us')}`;
-                    curr_listing = `${listings[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`;
+                    let usd = `$${Number((Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
+                    curr_listing = `${Number(listings[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`;
                 }
 
                 let bids = res.bids;
-                var highest_bid = 'N/A';
+                var highest_bid = 'None';
                 if (bids && bids.length > 0) {
                     let symbol;
                     switch (bids[0].payment_token_contract.symbol) {
@@ -109,12 +109,12 @@ module.exports = {
                             symbol = ' ' + bids[0].payment_token_contract.symbol;
                             break;
                     }
-                    let usd = `$${(Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price)).toFixed(2).toLocaleString('en-us')}`;
-                    highest_bid = `${bids[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`
+                    let usd = `$${Number((Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
+                    highest_bid = `${Number(bids[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`
                 }
 
                 let sales = res.sales;
-                var highest_sale = 'N/A';
+                var highest_sale = 'None';
                 if (sales && sales.length > 0) {
                     let symbol;
                     switch (sales[0].payment_token.symbol) {
@@ -126,8 +126,8 @@ module.exports = {
                             symbol = ' ' + sales[0].payment_token.symbol;
                             break;
                     }
-                    let usd = `$${(Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price)).toFixed(2).toLocaleString('en-us')}`;
-                    highest_sale = `${sales[0].total_price / Math.pow(10, 18)}${symbol} (${usd})`
+                    let usd = `$${Number((Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
+                    highest_sale = `${Number(sales[0].total_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`
                 }
 
                 let traits = (asset.traits ? asset.traits : 'Unrevealed');
@@ -136,6 +136,7 @@ module.exports = {
                 let collection_img = asset.asset_contract.image_url;
 
                 var traitDesc = await parseTraits(client, traits).catch(err => console.log(err));
+                traitDesc += `Animated: ${animation_url}`
 
                 const row = new MessageActionRow()
                     .addComponents(new MessageButton()
@@ -161,7 +162,6 @@ module.exports = {
                     .setTitle(`${name} | ${collection}`)
                     .setURL(OS_link)
                     .setDescription(traitDesc)
-                    .addField('Animated?', animation_url)
                     .setThumbnail(image_url)
                     .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
                     .setColor(44774)
