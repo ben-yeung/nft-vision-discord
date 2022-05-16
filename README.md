@@ -23,6 +23,9 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/find [collection-slug]**
   * Retrieve a summary of a collection.
   * Returns an embed containing total supply, owner count, royalties (OS royalty included), total volume, and floor price.
+* **/asset [collection-slug] [token-id]**
+  * Retrieve a specific asset from a collection.
+  * View the NFT's traits, last sold, current listing, highest bid, highest sale, and current owner.
 * **/eth [amount]**
   * Get current ETH to USD conversion with an option for custom amounts.
   * CoinGecko API see the "Debugging" section for more details.
@@ -45,10 +48,12 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 
 ## 📅 Future Updates / Roadmap Ahead
-* For the various statistics I plan on adding more details such as 7 day and 30 day volume. Curently curating feedback from the servers I provide for to get critique on how the data is displayed within a Discord server.
-* For the derisk commands I plan on adding support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk accordingly all with only the transaction id.
-* Wallet watching commands for when notable wallets buy/sell monitored collections.
-* Integrate some of the smart contract scraping from my previous projects to be supported by commands.
+- [x] Add 7 day and 30 day statistics to find command. Integrate Discord.js buttons to make UX simpler.
+- [x] Asset retrieval with trait assessment and sales history statistics.
+- [ ] NFT Rarity ranking and query options.
+- [ ] Support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk.
+- [ ] Wallet watching commands for when notable wallets buy/sell monitored collections.
+- [ ] Publish a web dApp to serve as an all-in-one NFT tool with above utilities.
 
 ## 🧰 Debugging / Notes
 * "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
