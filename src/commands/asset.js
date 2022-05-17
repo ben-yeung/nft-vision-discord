@@ -6,6 +6,7 @@ const botconfig = require('../botconfig.json');
 const { getAsset } = require('../utils/get-asset');
 const { parseTraits } = require('../utils/parse-traits');
 const db = require('quick.db');
+const ms = require('ms');
 
 /*
     quick.db is used for command spam prevention
@@ -35,10 +36,16 @@ module.exports = {
         .addStringOption(option => option.setName('token-id').setDescription('NFT specific token id. Usually in name. Otherwise check txn for ID.').setRequired(true)),
     options: '[collection-slug] [token-id]',
     async execute(interaction, args, client) {
+
+        if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 5000) {
+            return interaction.reply(`Please wait ${ms(5000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`)
+        } else {
+            db.set(`${interaction.user.id}.assetstarted`, Date.now())
+            pruneQueries(interaction.user);
+        }
+
         let slug = interaction.options.getString('collection-slug');
         let token_id = interaction.options.getString('token-id');
-
-        pruneQueries(interaction.user);
 
         await interaction.reply({ content: 'Searching for asset...', embeds: [] });
 
@@ -151,9 +158,8 @@ module.exports = {
                     .setTitle(`${name} | ${collection}`)
                     .setURL(OS_link)
                     .setImage(image_url)
-                    .addField(`Listed For`, curr_listing, true)
-                    .addField(`Owned By`, owner, true)
-                    .addField("\u200B", '\u200B', true)
+                    .addField(`Owned By`, owner)
+                    .addField(`Listed For`, curr_listing)
                     .addField(`Highest Bid`, highest_bid)
                     .addField(`Highest Sale`, highest_sale)
                     .addField(`Last Sale`, last_sale)
