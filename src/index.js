@@ -89,13 +89,23 @@ client.on('ready', async () => {
 
 client.on('guildCreate', async (guild) => {
     try {
-        console.log("New guild detected. Creating schema");
+        console.log(`Bot added to guild ${guild.name}. Creating schema`);
         const guildOBJ = {
             guild_id: guild.id,
             guild_name: guild.name,
             alerts_channel: ''
         }
         await new guildSchema(guildOBJ).save();
+    } catch (err) {
+        console.log(err);
+        console.log("MongoDB closing connection.")
+    }
+})
+
+client.on('guildDelete', async (guild) => {
+    try {
+        console.log(`Bot removed from guild ${guild.name}. Updating mongoDB`);
+        await guildSchema.findOneAndRemove({ guild_id: guild.id });
     } catch (err) {
         console.log(err);
         console.log("MongoDB closing connection.")
