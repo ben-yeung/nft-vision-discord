@@ -116,6 +116,7 @@ exports.indexCollection = async (client, collection_slug) => {
 
                             const asset_traits = traits;
                             var none_categories = Object.keys(categories);
+                            var trait_map = {}
 
                             // console.log(asset_traits)
                             var rarity_score = 0;
@@ -128,12 +129,15 @@ exports.indexCollection = async (client, collection_slug) => {
                                 rarity_score += trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity;
                                 rarity_score_norm += trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_norm;
                                 rarity_score_avg += trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_avg;
+
+                                trait_map[t.value] = trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_norm;
                             }
                             // Account for rarity in not having specific traits
                             for (var j = 0; j < none_categories.length; j++) {
                                 rarity_score += trait_rarity[none_categories[j]]['none'].rarity;
                                 rarity_score_norm += trait_rarity[none_categories[j]]['none'].rarity_norm;
                                 rarity_score_avg += trait_rarity[none_categories[j]]['none'].rarity_avg;
+                                trait_map[`${none_categories[j]} None`] = trait_rarity[none_categories[j]]['none'].rarity_norm;
                             }
                             if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0
                             num_traits_freq[asset_traits.length] += 1;
@@ -141,6 +145,7 @@ exports.indexCollection = async (client, collection_slug) => {
                             let asset_rarity = {
                                 token_id: token_id,
                                 trait_count: asset_traits.length,
+                                trait_map: trait_map,
                                 rarity_score: rarity_score,
                                 rarity_score_norm: rarity_score_norm,
                                 rarity_score_avg: rarity_score_avg
@@ -177,6 +182,8 @@ exports.indexCollection = async (client, collection_slug) => {
                     allTokensArr[j].rarity_score += trait_score;
                     allTokensArr[j].rarity_score_norm += trait_score;
                     allTokensArr[j].rarity_score_avg += trait_score;
+
+                    allTokensArr[j].trait_map[`Trait Count ${allTokensArr[j].trait_count}`] = trait_score;
                 }
 
                 allTokensArr.sort((a, b) => {
@@ -190,11 +197,12 @@ exports.indexCollection = async (client, collection_slug) => {
 
                 var rankings = [];
                 rankings.push(rarityNormRankings);
-                rankings.push(rarityAvgRankings)
+                // rankings.push(rarityAvgRankings)
 
                 for (var k = 0; k < 3; k++) {
                     for (var l = 0; l < 10; l++) {
-                        console.log(`Rank #${l + 1} ${rankings[k][l].token_id}`);
+                        console.log(`Rank #${l + 1} ${rankings[k][l].token_id} Norm: ${rankings[k][l].rarity_score_norm} Avg: ${rankings[k][l].rarity_score_avg}`);
+                        console.log(rankings[k][l].trait_map)
                     }
                     console.log('-----------------------------------')
                 }
