@@ -2,6 +2,7 @@ const Discord = require("discord.js");
 const axios = require('axios');
 const botconfig = require('../botconfig.json');
 const guildSchema = require('../schemas/guild-schema');
+const metaSchema = require('../schemas/metadata-schema');
 const asset = require("../commands/asset");
 const sdk = require('api')('@opensea/v1.0#595ks1ol33d7wpk');
 
@@ -110,7 +111,7 @@ exports.indexCollection = async (client, collection_slug) => {
                             client.OS_INDEX_CNT = 0;
                         }
                         client.OS_QUEUE--;
-                        console.log(`${collection_slug} : ${allTokensArr.length}`)
+                        // console.log(`${collection_slug} : ${allTokensArr.length}`)
 
                         assetJSON.assets.forEach(asset => {
                             let { token_id, traits } = asset;
@@ -119,7 +120,6 @@ exports.indexCollection = async (client, collection_slug) => {
                             var none_categories = Object.keys(categories);
                             var trait_map = {}
 
-                            // console.log(asset_traits)
                             var rarity_score = 0;
                             var rarity_score_norm = 0;
                             // Sum up rarity scores based on asset's traits
@@ -158,7 +158,6 @@ exports.indexCollection = async (client, collection_slug) => {
 
                 }
 
-                // console.log(allTokens)
                 var trait_count_rarities = {};
                 var trait_count_sum = 0;
                 Object.keys(num_traits_freq).forEach((t) => {
@@ -173,7 +172,6 @@ exports.indexCollection = async (client, collection_slug) => {
                     let count_normed = count_rarity * (trait_count_avg / num_traits_freq[trait_counts[i]])
                     trait_count_rarities[trait_counts[i]] = count_rarity;
                 }
-                console.log(trait_count_rarities)
 
                 // Copy allTokensArr and introduce Trait Count weighting
                 var allTokensTraitCount = JSON.parse(JSON.stringify(allTokensArr))
@@ -186,8 +184,6 @@ exports.indexCollection = async (client, collection_slug) => {
                     // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
                     allTokensArr[j].trait_map[`Trait Count ${allTokensArr[j].trait_count}`] = trait_score;
                 }
-
-                // console.log(allTokensArr)
 
                 allTokensArr.sort((a, b) => {
                     return b['rarity_score_norm'] - a['rarity_score_norm'];
@@ -210,7 +206,32 @@ exports.indexCollection = async (client, collection_slug) => {
                     rankings[token_id]['rank_trait_count'] = rank;
                 }
 
-                // console.log(rankings)
+                try {
+                    const res = await metaSchema.findOne({
+                        slug: collection_slug
+                    });
+
+                    if (!res) {
+                        console.log(`[${collection_slug}]: Newly indexed collection. Creating schema`);
+                        const rankOBJ = {
+                            slug: collection_slug,
+                            ranks: rankings
+                        }
+                        await new metaSchema(rankOBJ).save();
+                    } else {
+                        console.log(`[${collection_slug}]: Updating existing collection ranks.`)
+                        try {
+                            await metaSchema.updateOne({ slug: collection_slug }, { ranks: rankings })
+                            if (res == null) return interaction.reply('An error occurred. Please try again.');
+                        } catch (err) {
+                            reject('An error occurred while indexing. Please try again.')
+                        }
+                    }
+
+                } catch (err) {
+                    console.log(err);
+                    console.log("MongoDB closing connection.")
+                }
 
                 client.OS_INDEX_QUEUE = client.OS_INDEX_QUEUE.filter((value) => value != collection_slug);
                 resolve('Finished');
