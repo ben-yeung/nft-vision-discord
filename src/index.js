@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const botconfig = require('./botconfig.json');
 const token = botconfig.TOKEN // Discord Bot Token
 const { initializeCommands } = require('./deploy');
-const { monitor } = require('./helpers/monitor-floor');
-const { getEthPrice } = require('./helpers/get-eth-price');
+const { monitor } = require('./utils/monitor-floor');
+const { getEthPrice } = require('./utils/get-eth-price');
 const guildSchema = require('./schemas/guild-schema');
 const fs = require('fs');
 
@@ -65,6 +65,16 @@ client.on('ready', async () => {
     // See here for more details on how to get an OpenSea API Key
     // https://docs.opensea.io/reference/request-an-api-key
     client.OS_KEY = (botconfig.OS_API_KEY ? botconfig.OS_API_KEY : '');
+    client.OS_INDEX_CNT = 0;
+    client.OS_INDEX_QUEUE = [];
+    client.OS_QUEUE = 0;
+    client.OS_QUEUE_PRIO = 0;
+
+    client.delay = (ms) => {
+        return new Promise(resolve => {
+            setTimeout(resolve, ms);
+        });
+    }
 
     await getEthPrice(client);
     setInterval(function () { getEthPrice(client) }, 60000);

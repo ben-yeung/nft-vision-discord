@@ -3,8 +3,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js");
 const guildSchema = require('../schemas/guild-schema');
 const botconfig = require('../botconfig.json');
-const { getAsset } = require('../helpers/get-asset');
-const { parseTraits } = require('../helpers/parse-traits');
+const { getAsset } = require('../utils/get-asset');
+const { parseTraits } = require('../utils/parse-traits');
 const db = require('quick.db');
 
 /*
@@ -24,6 +24,8 @@ function pruneQueries(author) {
     }
     db.set(`${author.id}.assetquery`, queries)
 }
+
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -52,9 +54,9 @@ module.exports = {
                 }
                 let name = asset.name;
 
-                var owner_user = 'Unnamed';
+                var owner_user = ((asset.owner.address).substring(2, 8)).toUpperCase();
                 if (asset.owner.user)
-                    owner_user = (asset.owner.user.username ? asset.owner.user.username : 'Unnamed')
+                    owner_user = (asset.owner.user.username ? asset.owner.user.username : owner_user)
                 let owner = `[${owner_user}](https://opensea.io/${asset.owner.address})`
                 let num_sales = (asset.num_sales ? String(asset.num_sales) : '0');
                 var last_sale = 'None';
@@ -64,7 +66,7 @@ module.exports = {
                     let price_sold = asset.last_sale.total_price / Math.pow(10, 18);
                     var date = new Date(`${(asset.last_sale.event_timestamp).substring(0, 10)} 00:00`);
                     last_sale_date = `(${Number(date.getMonth()) + 1}/${date.getDate()}/${date.getFullYear()})`;
-                    let usd = `$${Number((Number(price_sold) * Number(asset.last_sale.payment_token.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
+                    let usd = `${currency.format((Number(price_sold) * Number(asset.last_sale.payment_token.usd_price)))}`;
 
                     switch (asset.last_sale.payment_token.symbol) {
                         case 'ETH':
@@ -92,7 +94,7 @@ module.exports = {
                             symbol = ' ' + listings[0].payment_token_contract.symbol;
                             break;
                     }
-                    let usd = `$${Number((Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
+                    let usd = `${currency.format(Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price))}`;
                     curr_listing = `${Number(listings[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`;
                 }
 
@@ -109,8 +111,8 @@ module.exports = {
                             symbol = ' ' + bids[0].payment_token_contract.symbol;
                             break;
                     }
-                    let usd = `$${Number((Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
-                    highest_bid = `${Number(bids[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`
+                    let usd = `${currency.format((Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price)))}`;
+                    highest_bid = `${bids[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`
                 }
 
                 let sales = res.sales;
@@ -126,8 +128,8 @@ module.exports = {
                             symbol = ' ' + sales[0].payment_token.symbol;
                             break;
                     }
-                    let usd = `$${Number((Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price)).toFixed(0)).toLocaleString('en-us')}`;
-                    highest_sale = `${Number(sales[0].total_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`
+                    let usd = `${currency.format((Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price)))}`;
+                    highest_sale = `${sales[0].total_price / Math.pow(10, 18)}${symbol} (${usd})`
                 }
 
                 let traits = (asset.traits ? asset.traits : 'Unrevealed');
@@ -136,7 +138,7 @@ module.exports = {
                 let collection_img = asset.asset_contract.image_url;
 
                 var traitDesc = await parseTraits(client, traits).catch(err => console.log(err));
-                traitDesc += `Animated: ${animation_url}`
+                traitDesc += `**Animated:** ${animation_url}`
 
                 const row = new MessageActionRow()
                     .addComponents(new MessageButton()
@@ -151,6 +153,7 @@ module.exports = {
                     .setImage(image_url)
                     .addField(`Listed For`, curr_listing, true)
                     .addField(`Owned By`, owner, true)
+                    .addField("\u200B", '\u200B', true)
                     .addField(`Highest Bid`, highest_bid)
                     .addField(`Highest Sale`, highest_sale)
                     .addField(`Last Sale`, last_sale)

@@ -38,6 +38,7 @@ module.exports = {
             db.set(`${interaction.user.id}.findstarted`, Date.now())
             pruneQueries(interaction.user);
         }
+        await interaction.reply({ content: 'Searching for collection...', embeds: [] });
 
         sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug') })
             .then(async (res) => {
@@ -129,7 +130,7 @@ module.exports = {
                         .setStyle('DANGER')
                     );
 
-                await interaction.reply({ embeds: [findEmbedSimple], components: [row] });
+                await interaction.editReply({ content: ' ­', embeds: [findEmbedSimple], components: [row] });
 
 
                 let currQueries = (db.get(`${interaction.user.id}.findquery`) != null ? db.get(`${interaction.user.id}.findquery`) : {});
