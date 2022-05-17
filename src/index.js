@@ -87,4 +87,19 @@ client.on('ready', async () => {
     console.log(`${client.user.username} is online!`);
 })
 
+client.on('guildCreate', async (guild) => {
+    try {
+        console.log("New guild detected. Creating schema");
+        const guildOBJ = {
+            guild_id: guild.id,
+            guild_name: guild.name,
+            alerts_channel: ''
+        }
+        await new guildSchema(guildOBJ).save();
+    } catch (err) {
+        console.log(err);
+        console.log("MongoDB closing connection.")
+    }
+})
+
 client.login(token)
