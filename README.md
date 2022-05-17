@@ -29,27 +29,21 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/eth [amount]**
   * Get current ETH to USD conversion with an option for custom amounts.
   * CoinGecko API see the "Debugging" section for more details.
-* **/gas**
-  * Get current gas conditions (slow, market, and fast)
-  * Etherscan Gas Tracker API implementation.
 * **/summary**
   * View a comprehensive summary of the currently monitored collections.
   * The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
 * **/getlist**
   * View the list of monitored collections as well as the current target prices set for each respective collection.
-* **/clear**
-  * Clears the list of monitored collections. Requires Administrator perms.
-* **/setalerts [channel-id]**
-  * Set the guild's dedicated channel to receive the floor price target alerts. Requires Administrator perms.
-  * If this is not set then the guild will not receive alerts. Other functions such as /find will still function.
 * TBA ...
 
 ## 📸 Command Previews
 Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 
 ## 📅 Future Updates / Roadmap Ahead
-- [x] Add 7 day and 30 day statistics to find command. Integrate Discord.js buttons to make UX simpler.
+- [x] Integrate Discord.js buttons to make UX simpler.
+- [x] Add 7 day and 30 day statistics to find command. 
 - [x] Asset retrieval with trait assessment and sales history statistics.
+- [x] Implement asset processing with RR scheduling to prevent API Rate Limits.
 - [ ] NFT Rarity ranking and query options.
 - [ ] Support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk.
 - [ ] Wallet watching commands for when notable wallets buy/sell monitored collections.
