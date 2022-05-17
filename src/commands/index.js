@@ -17,7 +17,7 @@ module.exports = {
         await interaction.reply({ content: 'Queuing collection to be indexed. Please give me a moment.', embeds: [] });
 
         indexCollection(client, slug).then(test => {
-            return interaction.editReply({ content: `Finished indexing **${slug}**.` })
+            return interaction.editReply({ content: `<@${interaction.user.id}>, Finished indexing **${slug}**.` })
         }).catch(err => {
             return interaction.editReply(err);
         });
