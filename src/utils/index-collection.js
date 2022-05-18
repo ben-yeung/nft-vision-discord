@@ -31,7 +31,8 @@ exports.indexCollection = async (client, collection_slug) => {
                 const c = res.collection;
                 const totalSupply = c.stats.total_supply;
                 let allTraits = c.traits;
-                if (!allTraits || allTraits.length == 0) return reject('Could not find traits for given collection. Please try again in a moment.')
+                console.log(allTraits)
+                if (!allTraits || Object.keys(allTraits).length == 0) return reject('Could not find traits for given collection. Metadata may not be revealed yet.')
 
                 // Calc avg number of traits per category. Used for rarity score normalization
                 var sum = 0;
@@ -72,7 +73,7 @@ exports.indexCollection = async (client, collection_slug) => {
                         let none_rarity = 1 / none_freq;
                         let none_rarity_norm = none_rarity * (avgPerCat / trait_total);
                         let none_rarity_avg = (none_rarity + none_rarity_norm) / 2
-                        trait_rarity[category.toLowerCase()]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, rarity_avg: none_rarity_avg }
+                        trait_rarity[category.toLowerCase()]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, rarity_avg: none_rarity_avg, count: totalSupply - categories[category.toLowerCase()] }
                     } else {
                         trait_rarity[category.toLowerCase()]['none'] = { rarity: 0, rarity_norm: 0, rarity_avg: 0 }
                     }
@@ -81,10 +82,11 @@ exports.indexCollection = async (client, collection_slug) => {
                 // Asset fetching in batches of 50 per call.
                 var cursor = '';
                 client.OS_INDEX_QUEUE.push(collection_slug);
+                console.log(`Beginning to index ${collection_slug}`)
                 while (allTokensArr.length < totalSupply) {
                     let error = false;
                     try {
-                        while (client.OS_QUEUE_PRIO > 0 || (client.OS_INDEX_QUEUE.length > 0 && (collection_slug != client.OS_INDEX_QUEUE[0]) && collection_slug != client.OS_INDEX_QUEUE[1])) {
+                        while (client.OS_QUEUE_PRIO > 0 || client.OS_QUEUE >= 4 || (client.OS_INDEX_QUEUE.length > 0 && (collection_slug != client.OS_INDEX_QUEUE[0]) && collection_slug != client.OS_INDEX_QUEUE[1])) {
                             await delay(2500);
                         }
                         client.OS_QUEUE++;
@@ -111,7 +113,7 @@ exports.indexCollection = async (client, collection_slug) => {
                             client.OS_INDEX_CNT = 0;
                         }
                         client.OS_QUEUE--;
-                        // console.log(`${collection_slug} : ${allTokensArr.length}`)
+                        console.log(`[${collection_slug}]: ${allTokensArr.length}`)
 
                         assetJSON.assets.forEach(asset => {
                             let { token_id, traits } = asset;
@@ -132,11 +134,14 @@ exports.indexCollection = async (client, collection_slug) => {
                                 trait_map[t.value] = trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_norm;
                             }
                             // Account for rarity in not having specific traits
+                            var none_list = {}
                             for (var j = 0; j < none_categories.length; j++) {
                                 rarity_score += trait_rarity[none_categories[j]]['none'].rarity;
                                 rarity_score_norm += trait_rarity[none_categories[j]]['none'].rarity_norm;
-                                trait_map[`${none_categories[j]} None`] = trait_rarity[none_categories[j]]['none'].rarity_norm;
+                                // Used in parse-traits.js when formatting traits and trait rarity scores into embed
+                                none_list[`**${none_categories[j][0].toUpperCase() + none_categories[j].substring(1)}:** None`] = [trait_rarity[none_categories[j]]['none'].rarity_norm, trait_rarity[none_categories[j]]['none'].count];
                             }
+                            trait_map[`Other`] = none_list;
                             if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0;
                             num_traits_freq[asset_traits.length] += 1;
 
@@ -170,19 +175,20 @@ exports.indexCollection = async (client, collection_slug) => {
                     let count_freq = num_traits_freq[trait_counts[i]] / totalSupply;
                     let count_rarity = 1 / count_freq;
                     let count_normed = count_rarity * (trait_count_avg / num_traits_freq[trait_counts[i]])
-                    trait_count_rarities[trait_counts[i]] = count_rarity;
+                    trait_count_rarities[trait_counts[i]] = [count_normed, num_traits_freq[trait_counts[i]]];
                 }
 
                 // Copy allTokensArr and introduce Trait Count weighting
                 var allTokensTraitCount = JSON.parse(JSON.stringify(allTokensArr))
                 for (var j = 0; j < allTokensTraitCount.length; j++) {
-                    let trait_score = trait_count_rarities[allTokensTraitCount[j].trait_count];
+                    let trait_score = trait_count_rarities[allTokensTraitCount[j].trait_count][0];
+                    let trait_total = trait_count_rarities[allTokensTraitCount[j].trait_count][1];
                     allTokensTraitCount[j].rarity_score += trait_score;
                     allTokensTraitCount[j].rarity_score_norm += trait_score;
 
                     // We make a deep copy of allTokensArr for allTokensTraitCount to separate sorting
                     // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
-                    allTokensArr[j].trait_map[`Trait Count ${allTokensArr[j].trait_count}`] = trait_score;
+                    allTokensArr[j].trait_map['Other'][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
                 }
 
                 allTokensArr.sort((a, b) => {
@@ -203,6 +209,7 @@ exports.indexCollection = async (client, collection_slug) => {
                 for (var j = 0; j < allTokensTraitCount.length; j++) {
                     let rank = j + 1;
                     let token_id = allTokensTraitCount[j].token_id;
+                    rankings[token_id]['rarity_score_trait'] = allTokensTraitCount[j].rarity_score_norm;
                     rankings[token_id]['rank_trait_count'] = rank;
                 }
 
@@ -234,6 +241,7 @@ exports.indexCollection = async (client, collection_slug) => {
                 }
 
                 client.OS_INDEX_QUEUE = client.OS_INDEX_QUEUE.filter((value) => value != collection_slug);
+                console.log(`[${collection_slug}]: Finished indexing`);
                 resolve('Finished');
 
             }).catch(err => {

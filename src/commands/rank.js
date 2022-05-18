@@ -2,9 +2,11 @@ const Discord = require("discord.js")
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js");
 const guildSchema = require('../schemas/guild-schema');
+const metaSchema = require('../schemas/metadata-schema');
 const botconfig = require('../botconfig.json');
 const { getAsset } = require('../utils/get-asset');
 const { parseTraits } = require('../utils/parse-traits');
+const { indexCollection } = require('../utils/index-collection');
 const db = require('quick.db');
 const ms = require('ms');
 
@@ -19,7 +21,7 @@ function pruneQueries(author) {
     if (!queries) return
 
     for (const [key, val] of Object.entries(queries)) {
-        if (Date.now() - val[2] >= 90000) {
+        if (Date.now() - val[3] >= 90000) {
             delete queries[key]
         }
     }
@@ -30,8 +32,8 @@ const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: '
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('asset')
-        .setDescription('Get information of an asset.')
+        .setName('rank')
+        .setDescription('Get rank rarity for a given NFT.')
         .addStringOption(option => option.setName('collection-slug').setDescription('OpenSea Collection slug. Commmonly found in the URL of the collection.').setRequired(true))
         .addStringOption(option => option.setName('token-id').setDescription('NFT specific token id. Usually in name. Otherwise check txn for ID.').setRequired(true)),
     options: '[collection-slug] [token-id]',
@@ -47,15 +49,38 @@ module.exports = {
         let slug = interaction.options.getString('collection-slug');
         let token_id = interaction.options.getString('token-id');
 
-        await interaction.reply({ content: 'Searching for asset...', embeds: [] });
+        await interaction.reply({ content: 'Searching for rarity ranks...', embeds: [] });
 
         getAsset(client, slug, token_id).then(async (res) => {
 
             try {
                 let asset = res.assetObject;
                 let image_url = asset.image_url;
-                let name = asset.name;
+                var animation_url = 'False';
+                if (asset.animation_url) {
+                    animated = true;
+                    animation_url = `True • [View](${asset.animation_url})`;
+                }
 
+                var rankOBJ = await metaSchema.findOne({ slug: slug });
+                if (!rankOBJ) {
+                    interaction.editReply('Did not find that collection indexed yet. Queuing for rank calculation. Please check back later.')
+                    indexCollection(client, slug).then(test => {
+                        return interaction.editReply({ content: `<@${interaction.user.id}>, Finished indexing **${slug}**.` })
+                    }).catch(err => {
+                        return interaction.editReply(err);
+                    });
+
+                    return;
+                }
+                rankOBJ = rankOBJ.ranks[token_id]
+                const rank_norm = rankOBJ.rank_norm;
+                const rank_trait_count = rankOBJ.rank_trait_count;
+                const rank_norm_score = rankOBJ.rarity_score_norm.toFixed(2);
+                const rank_trait_score = rankOBJ.rarity_score_trait.toFixed(2);
+                const trait_map = rankOBJ.trait_map;
+
+                let name = (asset.name ? asset.name : `#${token_id}`);
                 var owner_user = ((asset.owner.address).substring(2, 8)).toUpperCase();
                 if (asset.owner.user)
                     owner_user = (asset.owner.user.username ? asset.owner.user.username : owner_user)
@@ -134,21 +159,36 @@ module.exports = {
                     highest_sale = `${sales[0].total_price / Math.pow(10, 18)}${symbol} (${usd})`
                 }
 
-                let traits = (Object.keys(asset.traits).length > 0 ? asset.traits : 'Unrevealed');
+                let traits = (asset.traits ? asset.traits : 'Unrevealed');
                 let OS_link = asset.permalink;
                 let collection = asset.asset_contract.name;
                 let collection_img = asset.asset_contract.image_url;
 
-                var traitDesc = await parseTraits(client, traits).catch(err => console.log(err));
+                var traitDesc = await parseTraits(client, traits, trait_map).catch(err => console.log(err));
+                traitDesc += `**Animated:** ${animation_url}`
 
                 const row = new MessageActionRow()
                     .addComponents(new MessageButton()
+                        .setCustomId('asset_sales')
+                        .setLabel('Show Sales')
+                        .setStyle('SUCCESS')
+                    ).addComponents(new MessageButton()
                         .setCustomId('asset_traits')
                         .setLabel('Show Traits')
-                        .setStyle('SUCCESS')
+                        .setStyle('PRIMARY')
                     );
 
-                let embed = new Discord.MessageEmbed()
+                let embedRank = new Discord.MessageEmbed()
+                    .setTitle(`${name} | ${collection}`)
+                    .setURL(OS_link)
+                    .setImage(image_url)
+                    .addField(`Rank #${rank_norm}`, `*Trait Normalization* \n Rarity Score ${rank_norm_score}`)
+                    .addField(`Rank #${rank_trait_count}`, `*Trait Count Weighting* \n Rarity Score ${rank_trait_score}`)
+                    .setThumbnail(collection_img)
+                    .setFooter({ text: `Slug: ${slug} • Token: ${token_id} • Total Sales: ${num_sales}` })
+                    .setColor(44774)
+
+                let embedSales = new Discord.MessageEmbed()
                     .setTitle(`${name} | ${collection}`)
                     .setURL(OS_link)
                     .setImage(image_url)
@@ -169,10 +209,10 @@ module.exports = {
                     .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
                     .setColor(44774)
 
-                await interaction.editReply({ content: ' ­', embeds: [embed], components: [row] });
+                await interaction.editReply({ content: ' ­', embeds: [embedRank], components: [row] });
 
                 let currQueries = (db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {});
-                currQueries[interaction.id] = [embed, embedTraits, Date.now()];
+                currQueries[interaction.id] = [embedRank, embedSales, embedTraits, Date.now()];
                 db.set(`${interaction.user.id}.assetquery`, currQueries)
 
                 const message = await interaction.fetchReply();
@@ -192,8 +232,9 @@ module.exports = {
                     if (!queries || !queries[interaction.id]) {
                         return button.deferUpdate();
                     }
-                    let salesEmbed = queries[interaction.id][0];
-                    let traitsEmbed = queries[interaction.id][1];
+                    let rankEmbed = queries[interaction.id][0]
+                    let salesEmbed = queries[interaction.id][1];
+                    let traitsEmbed = queries[interaction.id][2];
 
                     if (button.customId == 'asset_traits') {
                         const row = new MessageActionRow()
@@ -201,6 +242,10 @@ module.exports = {
                                 .setCustomId('asset_sales')
                                 .setLabel('Show Sales')
                                 .setStyle('SUCCESS')
+                            ).addComponents(new MessageButton()
+                                .setCustomId('asset_rank')
+                                .setLabel('Show Rank')
+                                .setStyle('PRIMARY')
                             );
                         await interaction.editReply({ embeds: [traitsEmbed], components: [row] });
                     } else if (button.customId == 'asset_sales') {
@@ -209,8 +254,24 @@ module.exports = {
                                 .setCustomId('asset_traits')
                                 .setLabel('Show Traits')
                                 .setStyle('SUCCESS')
+                            ).addComponents(new MessageButton()
+                                .setCustomId('asset_rank')
+                                .setLabel('Show Rank')
+                                .setStyle('PRIMARY')
                             );
                         await interaction.editReply({ embeds: [salesEmbed], components: [row] });
+                    } else if (button.customId == 'asset_rank') {
+                        const row = new MessageActionRow()
+                            .addComponents(new MessageButton()
+                                .setCustomId('asset_sales')
+                                .setLabel('Show Sales')
+                                .setStyle('SUCCESS')
+                            ).addComponents(new MessageButton()
+                                .setCustomId('asset_traits')
+                                .setLabel('Show Traits')
+                                .setStyle('PRIMARY')
+                            );
+                        await interaction.editReply({ embeds: [rankEmbed], components: [row] });
                     }
                     button.deferUpdate();
                 })
