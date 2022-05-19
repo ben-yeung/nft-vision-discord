@@ -45,7 +45,7 @@ exports.indexCollection = async (client, collection_slug) => {
                     Object.keys(traits).forEach((t) => {
                         category_sum += traits[t]
                     })
-                    categories[category.toLowerCase()] = category_sum;
+                    categories[category] = category_sum;
 
                     if (Math.abs(category_sum - totalSupply) > 1) {
                         sum += 1;
@@ -54,29 +54,34 @@ exports.indexCollection = async (client, collection_slug) => {
                 const avgPerCat = sum / Object.keys(allTraits).length;
                 const catSum = sum; // Used for trait count weighting when frequencies are found
 
+                // console.log(allTraits)
+
                 // Calc trait rarity per category
                 var trait_rarity = {};
                 for (const category in allTraits) {
-                    trait_rarity[category.toLowerCase()] = {};
+                    trait_rarity[category] = {};
                     let traits = allTraits[category];
-                    const trait_total = (totalSupply - categories[category.toLowerCase()] > 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length);
+                    console.log(category)
+                    console.log(traits)
+                    const trait_total = (totalSupply - categories[category] >= 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length);
                     Object.keys(traits).forEach((t) => {
                         let freq = traits[t] / totalSupply;
                         let rarity = 1 / freq;
                         let rarity_norm = rarity * (avgPerCat / trait_total);
-                        trait_rarity[category.toLowerCase()][t] = { rarity: rarity, rarity_norm: rarity_norm };
+                        trait_rarity[category][t] = { rarity: rarity, rarity_norm: rarity_norm };
                     })
                     // Include rarity scores for if the NFT does not have the trait category. (4-T or 5-T rares)
                     // If all NFTs have the trait category 'none' will default to 0 for rarity score calc below
-                    if (totalSupply - categories[category.toLowerCase()] > 1) {
-                        let none_freq = (totalSupply - categories[category.toLowerCase()]) / totalSupply;
+                    if (totalSupply - categories[category] >= 1) {
+                        let none_freq = (totalSupply - categories[category]) / totalSupply;
                         let none_rarity = 1 / none_freq;
                         let none_rarity_norm = none_rarity * (avgPerCat / trait_total);
-                        trait_rarity[category.toLowerCase()]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, count: totalSupply - categories[category.toLowerCase()] }
+                        trait_rarity[category]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, count: totalSupply - categories[category] }
                     } else {
-                        trait_rarity[category.toLowerCase()]['none'] = { rarity: 0, rarity_norm: 0 }
+                        trait_rarity[category]['none'] = { rarity: 0, rarity_norm: 0 }
                     }
                 }
+                console.log(trait_rarity)
 
                 // Asset fetching in batches of 50 per call.
                 var cursor = '';
@@ -125,12 +130,19 @@ exports.indexCollection = async (client, collection_slug) => {
                             var rarity_score_norm = 0;
                             // Sum up rarity scores based on asset's traits
                             for (var i = 0; i < asset_traits.length; i++) {
-                                let t = asset_traits[i];
-                                none_categories = none_categories.filter(c => c !== t.trait_type.toLowerCase());
-                                rarity_score += trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity;
-                                rarity_score_norm += trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_norm;
+                                const t = asset_traits[i];
+                                try {
+                                    none_categories = none_categories.filter(c => c !== t.trait_type);
+                                    rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
+                                    rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
 
-                                trait_map[t.value] = trait_rarity[t.trait_type.toLowerCase()][t.value.toLowerCase()].rarity_norm;
+                                    trait_map[t.value] = trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
+                                } catch (err) {
+                                    console.log(t.trait_type)
+                                    console.log(t.value)
+                                    console.log(err);
+                                }
+
                             }
                             // Account for rarity in not having specific traits
                             var none_list = {}

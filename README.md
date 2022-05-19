@@ -26,6 +26,9 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 * **/asset [collection-slug] [token-id]**
   * Retrieve a specific asset from a collection.
   * View the NFT's traits, last sold, current listing, highest bid, highest sale, and current owner.
+* **/rank [collection-slug] [token-id]**
+  * Retrieve a specific asset's rank.
+  * View the NFT's rank with Trait Normalization and with Trait Count Weighting.
 * **/eth [amount]**
   * Get current ETH to USD conversion with an option for custom amounts.
   * CoinGecko API see the "Debugging" section for more details.
@@ -60,6 +63,7 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 * Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
 * The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
 * ETH conversion is dependent on CoinGecko's API. See more here [CoinGecko Docs](https://www.coingecko.com/en/api/documentation)
+* Rank Rarity scoring is close/comparable to many other rarity sites such as RaritySniffer or NFTNerds.
 
 ## 🛠 Dependencies Include:
 * [mongoose](https://www.npmjs.com/package/mongoose)
