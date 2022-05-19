@@ -46,6 +46,7 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 - [x] Implement asset processing with RR scheduling to prevent API Rate Limits.
 - [x] Setup a collection index queue to handle multiple index requests.
 - [x] NFT Rarity ranking with trait normalization.
+- [x] NFT Rarity ranking with trait count weighting.
 - [ ] Support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk.
 - [ ] Wallet watching commands for when notable wallets buy/sell monitored collections.
 - [ ] Publish a web dApp to serve as an all-in-one NFT tool with above utilities.

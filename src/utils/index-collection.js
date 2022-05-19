@@ -31,7 +31,6 @@ exports.indexCollection = async (client, collection_slug) => {
                 const c = res.collection;
                 const totalSupply = c.stats.total_supply;
                 let allTraits = c.traits;
-                console.log(allTraits)
                 if (!allTraits || Object.keys(allTraits).length == 0) return reject('Could not find traits for given collection. Metadata may not be revealed yet.')
 
                 // Calc avg number of traits per category. Used for rarity score normalization
@@ -48,34 +47,34 @@ exports.indexCollection = async (client, collection_slug) => {
                     })
                     categories[category.toLowerCase()] = category_sum;
 
-                    if (category_sum != totalSupply) sum += 1;
+                    if (Math.abs(category_sum - totalSupply) > 1) {
+                        sum += 1;
+                    };
                 }
                 const avgPerCat = sum / Object.keys(allTraits).length;
+                const catSum = sum; // Used for trait count weighting when frequencies are found
 
                 // Calc trait rarity per category
                 var trait_rarity = {};
                 for (const category in allTraits) {
                     trait_rarity[category.toLowerCase()] = {};
                     let traits = allTraits[category];
-                    let trait_total = (totalSupply != categories[category.toLowerCase()] ? Object.keys(traits).length + 1 : Object.keys(traits).length);
+                    const trait_total = (totalSupply - categories[category.toLowerCase()] > 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length);
                     Object.keys(traits).forEach((t) => {
                         let freq = traits[t] / totalSupply;
                         let rarity = 1 / freq;
                         let rarity_norm = rarity * (avgPerCat / trait_total);
-                        let rarity_avg = (rarity + rarity_norm) / 2;
-                        trait_rarity[category.toLowerCase()][t] = { rarity: rarity, rarity_norm: rarity_norm, rarity_avg: rarity_avg };
+                        trait_rarity[category.toLowerCase()][t] = { rarity: rarity, rarity_norm: rarity_norm };
                     })
-                    trait_rarity[category.toLowerCase()]['none'] = { rarity: 0, rarity_norm: 0 }
                     // Include rarity scores for if the NFT does not have the trait category. (4-T or 5-T rares)
                     // If all NFTs have the trait category 'none' will default to 0 for rarity score calc below
-                    if (totalSupply != categories[category.toLowerCase()]) {
+                    if (totalSupply - categories[category.toLowerCase()] > 1) {
                         let none_freq = (totalSupply - categories[category.toLowerCase()]) / totalSupply;
                         let none_rarity = 1 / none_freq;
                         let none_rarity_norm = none_rarity * (avgPerCat / trait_total);
-                        let none_rarity_avg = (none_rarity + none_rarity_norm) / 2
-                        trait_rarity[category.toLowerCase()]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, rarity_avg: none_rarity_avg, count: totalSupply - categories[category.toLowerCase()] }
+                        trait_rarity[category.toLowerCase()]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, count: totalSupply - categories[category.toLowerCase()] }
                     } else {
-                        trait_rarity[category.toLowerCase()]['none'] = { rarity: 0, rarity_norm: 0, rarity_avg: 0 }
+                        trait_rarity[category.toLowerCase()]['none'] = { rarity: 0, rarity_norm: 0 }
                     }
                 }
 
@@ -164,17 +163,13 @@ exports.indexCollection = async (client, collection_slug) => {
                 }
 
                 var trait_count_rarities = {};
-                var trait_count_sum = 0;
-                Object.keys(num_traits_freq).forEach((t) => {
-                    trait_count_sum += num_traits_freq[t]
-                })
-                const trait_count_avg = trait_count_sum / Object.keys(num_traits_freq).length;
+                const trait_count_avg = (catSum + Object.keys(num_traits_freq).length) / (Object.keys(allTraits).length + 1);
 
                 const trait_counts = Object.keys(num_traits_freq)
                 for (var i = 0; i < trait_counts.length; i++) {
                     let count_freq = num_traits_freq[trait_counts[i]] / totalSupply;
                     let count_rarity = 1 / count_freq;
-                    let count_normed = count_rarity * (trait_count_avg / num_traits_freq[trait_counts[i]])
+                    let count_normed = count_rarity * (trait_count_avg / (Object.keys(num_traits_freq).length));
                     trait_count_rarities[trait_counts[i]] = [count_normed, num_traits_freq[trait_counts[i]]];
                 }
 

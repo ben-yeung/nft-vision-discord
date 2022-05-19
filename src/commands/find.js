@@ -194,7 +194,7 @@ module.exports = {
             .catch(err => {
                 console.log(err);
                 db.delete(`${interaction.user.id}.findstarted`)
-                return interaction.reply('Error while searching for collection. Check for typos or try again.')
+                return interaction.editReply('Error while searching for collection. Check for typos or try again.')
             });
 
 
