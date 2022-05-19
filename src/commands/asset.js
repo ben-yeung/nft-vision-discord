@@ -54,7 +54,7 @@ module.exports = {
             try {
                 let asset = res.assetObject;
                 let image_url = asset.image_url;
-                let name = asset.name;
+                let name = (asset.name ? asset.name : `#${token_id}`);
 
                 var owner_user = ((asset.owner.address).substring(2, 8)).toUpperCase();
                 if (asset.owner.user)
@@ -97,7 +97,7 @@ module.exports = {
                             break;
                     }
                     let usd = `${currency.format(Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price))}`;
-                    curr_listing = `${Number(listings[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`;
+                    curr_listing = `${listings[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`;
                 }
 
                 let bids = res.bids;

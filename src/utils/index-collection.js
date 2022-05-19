@@ -162,53 +162,67 @@ exports.indexCollection = async (client, collection_slug) => {
 
                 }
 
-                var trait_count_rarities = {};
-                const trait_count_avg = (catSum + Object.keys(num_traits_freq).length) / (Object.keys(allTraits).length + 1);
-
-                const trait_counts = Object.keys(num_traits_freq)
-                for (var i = 0; i < trait_counts.length; i++) {
-                    let count_freq = num_traits_freq[trait_counts[i]] / totalSupply;
-                    let count_rarity = 1 / count_freq;
-                    let count_normed = count_rarity * (trait_count_avg / (Object.keys(num_traits_freq).length));
-                    trait_count_rarities[trait_counts[i]] = [count_normed, num_traits_freq[trait_counts[i]]];
-                }
-
-                // Copy allTokensArr and introduce Trait Count weighting
-                var allTokensTraitCount = JSON.parse(JSON.stringify(allTokensArr))
-                for (var j = 0; j < allTokensTraitCount.length; j++) {
-                    let trait_score = trait_count_rarities[allTokensTraitCount[j].trait_count][0];
-                    let trait_total = trait_count_rarities[allTokensTraitCount[j].trait_count][1];
-                    allTokensTraitCount[j].rarity_score += trait_score;
-                    allTokensTraitCount[j].rarity_score_norm += trait_score;
-
-                    // We make a deep copy of allTokensArr for allTokensTraitCount to separate sorting
-                    // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
-                    allTokensArr[j].trait_map['Other'][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
-                }
-
-                allTokensArr.sort((a, b) => {
-                    return b['rarity_score_norm'] - a['rarity_score_norm'];
-                })
-                allTokensTraitCount.sort((a, b) => {
-                    return b['rarity_score_norm'] - a['rarity_score_norm'];
-                })
-
-                var rankings = {};
-
-                // Create object with token_id as key to make lookup faster. Store the rankings in mongoDB
-                for (var i = 0; i < allTokensArr.length; i++) {
-                    allTokensArr[i]['rank_norm'] = i + 1;
-                    rankings[allTokensArr[i].token_id] = allTokensArr[i];
-                }
-
-                for (var j = 0; j < allTokensTraitCount.length; j++) {
-                    let rank = j + 1;
-                    let token_id = allTokensTraitCount[j].token_id;
-                    rankings[token_id]['rarity_score_trait'] = allTokensTraitCount[j].rarity_score_norm;
-                    rankings[token_id]['rank_trait_count'] = rank;
-                }
-
+                // Account for trait count weights and construct rankings
                 try {
+                    var trait_count_rarities = {};
+                    const trait_count_avg = (catSum + Object.keys(num_traits_freq).length) / (Object.keys(allTraits).length + 1);
+
+                    const trait_counts = Object.keys(num_traits_freq)
+                    for (var i = 0; i < trait_counts.length; i++) {
+                        let count_freq = num_traits_freq[trait_counts[i]] / totalSupply;
+                        let count_rarity = 1 / count_freq;
+                        let count_normed = count_rarity * (trait_count_avg / (Object.keys(num_traits_freq).length));
+                        trait_count_rarities[trait_counts[i]] = [count_normed, num_traits_freq[trait_counts[i]]];
+                    }
+
+                    // Copy allTokensArr and introduce Trait Count weighting
+                    var allTokensTraitCount = JSON.parse(JSON.stringify(allTokensArr))
+                    for (var j = 0; j < allTokensTraitCount.length; j++) {
+                        let trait_score = trait_count_rarities[allTokensTraitCount[j].trait_count][0];
+                        let trait_total = trait_count_rarities[allTokensTraitCount[j].trait_count][1];
+                        allTokensTraitCount[j].rarity_score += trait_score;
+                        allTokensTraitCount[j].rarity_score_norm += trait_score;
+
+                        // We make a deep copy of allTokensArr for allTokensTraitCount to separate sorting
+                        // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
+                        allTokensArr[j].trait_map['Other'][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
+                    }
+
+                    allTokensArr.sort((a, b) => {
+                        return b['rarity_score_norm'] - a['rarity_score_norm'];
+                    })
+                    allTokensTraitCount.sort((a, b) => {
+                        return b['rarity_score_norm'] - a['rarity_score_norm'];
+                    })
+
+                    var rankings = {};
+
+                    // Create object with token_id as key to make lookup faster. Store the rankings in mongoDB
+                    for (var i = 0; i < allTokensArr.length; i++) {
+                        var rank = i + 1;
+                        if (i > 0) {
+                            if (allTokensArr[i - 1]['rarity_score_norm'] == allTokensArr[i]['rarity_score_norm']) {
+                                rank = allTokensArr[i - 1]['rank_norm'];
+                            }
+                        }
+                        allTokensArr[i]['rank_norm'] = rank;
+                        rankings[allTokensArr[i].token_id] = allTokensArr[i];
+                    }
+
+                    for (var j = 0; j < allTokensTraitCount.length; j++) {
+                        var rank = j + 1;
+                        if (j > 0) {
+                            let prev = allTokensTraitCount[j - 1].token_id
+                            if (allTokensTraitCount[j - 1].rarity_score_norm == allTokensTraitCount[j].rarity_score_norm) {
+                                rank = rankings[prev]['rank_trait_count'];
+                            }
+                        }
+                        let token_id = allTokensTraitCount[j].token_id;
+                        rankings[token_id]['rarity_score_trait'] = allTokensTraitCount[j].rarity_score_norm;
+                        rankings[token_id]['rank_trait_count'] = rank;
+                    }
+
+                    // Save to mongoDB and create new entry if needed
                     const res = await metaSchema.findOne({
                         slug: collection_slug
                     });
@@ -229,10 +243,9 @@ exports.indexCollection = async (client, collection_slug) => {
                             reject('An error occurred while indexing. Please try again.')
                         }
                     }
-
                 } catch (err) {
                     console.log(err);
-                    console.log("MongoDB closing connection.")
+                    reject('Something went wrong while indexing. Please try again in a moment.')
                 }
 
                 client.OS_INDEX_QUEUE = client.OS_INDEX_QUEUE.filter((value) => value != collection_slug);

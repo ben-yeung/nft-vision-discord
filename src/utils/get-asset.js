@@ -116,7 +116,7 @@ exports.getAsset = async (client, collection_slug, token_id) => {
 
             }).catch(err => {
                 console.log(err);
-                reject({ status: 404, reason: 'No collection found with that slug.' });
+                reject({ status: 404, reason: 'No collection found with that slug. OS API could also be down. Please try again in a moment.' });
             });
     })
 }
