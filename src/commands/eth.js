@@ -8,10 +8,13 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('eth')
         .setDescription('Convert eth to current USD conversion. Support for USD conversion only at the moment.')
-        .addStringOption(option => option.setName('amount').setDescription('Amount of ETH to convert to USD.').setRequired(true)),
+        .addStringOption(option => option.setName('amount').setDescription('Amount of ETH to convert to USD.')),
     options: '[amount]',
     async execute(interaction, args, client) {
-        let input = Number(interaction.options.getString('amount'));
+
+        if (client.eth === undefined) return interaction.reply('CoinGecko API seems to be down. Please try again later.')
+
+        let input = (interaction.options.getString('amount') ? Number(interaction.options.getString('amount')) : 1);
         let converted = Number((input * client.eth).toFixed(2)).toLocaleString('en-us');
 
         let embed = new Discord.MessageEmbed()

@@ -81,7 +81,6 @@ exports.indexCollection = async (client, collection_slug) => {
                         trait_rarity[category]['none'] = { rarity: 0, rarity_norm: 0 }
                     }
                 }
-                console.log(trait_rarity)
 
                 // Asset fetching in batches of 50 per call.
                 var cursor = '';
@@ -131,18 +130,10 @@ exports.indexCollection = async (client, collection_slug) => {
                             // Sum up rarity scores based on asset's traits
                             for (var i = 0; i < asset_traits.length; i++) {
                                 const t = asset_traits[i];
-                                try {
-                                    none_categories = none_categories.filter(c => c !== t.trait_type);
-                                    rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
-                                    rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
-
-                                    trait_map[t.value] = trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
-                                } catch (err) {
-                                    console.log(t.trait_type)
-                                    console.log(t.value)
-                                    console.log(err);
-                                }
-
+                                none_categories = none_categories.filter(c => c !== t.trait_type);
+                                rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
+                                rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
+                                trait_map[t.value] = trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
                             }
                             // Account for rarity in not having specific traits
                             var none_list = {}

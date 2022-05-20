@@ -77,7 +77,7 @@ client.on('ready', async () => {
     }
 
     await getEthPrice(client);
-    setInterval(function () { getEthPrice(client) }, 60000);
+    setInterval(function () { getEthPrice(client) }, 90000);
 
     client.convertETH = (num) => {
         return Number((client.eth * num).toFixed(0));
