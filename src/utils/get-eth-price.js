@@ -18,6 +18,6 @@ exports.getEthPrice = async (client) => {
     }
     if (response) {
         const json = response.data;
-        client.eth = json[0].current_price;
+        client.eth = [json[0].current_price, json[0].price_change_percentage_24h];
     }
 }
