@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction, args, client) {
 
         let amount = interaction.options.getNumber('amount');
-        if (amount < 0) return interaction.reply("Not a valid amount. Can't be negative!")
+        if (amount < 0) return interaction.reply({ content: "Not a valid amount. Can't be negative!", ephemeral: true })
 
         sdk['retrieving-a-single-collection']({ collection_slug: interaction.options.getString('collection-slug'), 'X-API-KEY': client.OS_KEY })
             .then(res => {
@@ -53,7 +53,7 @@ module.exports = {
             })
             .catch(err => {
                 console.log(err);
-                return interaction.reply('Error while searching for collection. Check for typos or try again.')
+                return interaction.reply({ content: 'Error while searching for collection. Check for typos or try again.', ephemeral: true })
             });
 
 

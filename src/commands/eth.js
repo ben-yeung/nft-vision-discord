@@ -12,11 +12,11 @@ module.exports = {
     options: '[amount]',
     async execute(interaction, args, client) {
 
-        if (client.eth === undefined) return interaction.reply('CoinGecko API seems to be down. Please try again later.')
+        if (client.eth === undefined) return interaction.reply({ content: 'CoinGecko API seems to be down. Please try again later.', ephemeral: true })
 
         try {
             let input = (interaction.options.getString('amount') ? Number(interaction.options.getString('amount')) : 1);
-            if (input <= 0) return interaction.reply("Invalid amount specified.")
+            if (input <= 0) return interaction.reply({ content: "Invalid amount specified.", ephemeral: true })
 
             let converted = Number((input * client.eth[0]).toFixed(2)).toLocaleString('en-us');
             let change = (client.eth[1] >= 0 ? '📈' : '📉')
@@ -49,6 +49,7 @@ module.exports = {
 
         } catch (err) {
             console.log(err);
+            return interaction.reply({ content: 'Error occurred fetching eth price. Please try again in a moment.', ephemeral: true })
         }
 
 

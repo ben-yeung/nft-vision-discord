@@ -60,12 +60,12 @@ module.exports = {
 
                 await interaction.editReply({ content: ' ­', embeds: [embed] });
             } else {
-                return interaction.reply('Error occurred. Please try again in a moment.')
+                return interaction.reply({ content: 'Error occurred. Please try again in a moment.', ephemeral: true })
             }
 
         } catch (err) {
             console.log(err);
-            return interaction.reply('Error occurred. Please try again in a moment.')
+            return interaction.reply({ content: 'Error occurred. Please try again in a moment.', ephemeral: true })
         }
 
 

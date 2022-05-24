@@ -69,7 +69,7 @@ module.exports = {
                     await interaction.editReply({ content: 'Clear aborted.', embeds: [], components: [] })
                 }
             } else {
-                await interaction.editReply({ content: 'An error occurred. Potentially timed out. Please try again.', embeds: [], components: [] })
+                await interaction.editReply({ content: 'An error occurred. Potentially timed out. Please try again.', embeds: [], components: [], ephemeral: true })
             }
 
         })

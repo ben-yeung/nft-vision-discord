@@ -19,7 +19,7 @@ module.exports = {
         indexCollection(client, slug).then(test => {
             return interaction.editReply({ content: `<@${interaction.user.id}>, Finished indexing **${slug}**.` })
         }).catch(err => {
-            return interaction.editReply(err);
+            return interaction.editReply({ content: err, ephemeral: true });
         });
 
     },

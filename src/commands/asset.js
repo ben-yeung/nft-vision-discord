@@ -37,8 +37,8 @@ module.exports = {
     options: '[collection-slug] [token-id]',
     async execute(interaction, args, client) {
 
-        if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 5000) {
-            return interaction.reply(`Please wait ${ms(5000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`)
+        if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000) {
+            return interaction.reply({ content: `Please wait ${ms(10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`, ephemeral: true })
         } else {
             db.set(`${interaction.user.id}.assetstarted`, Date.now())
             pruneQueries(interaction.user);
@@ -217,11 +217,12 @@ module.exports = {
 
             } catch (err) {
                 console.log(err);
-                return interaction.editReply({ content: `Error parsing asset. Please try again.` });
+                return interaction.editReply({ content: `Error parsing asset. Please try again.`, ephemeral: true });
             }
 
-        }).catch((res) => {
-            return interaction.editReply({ content: `Error: ${res.reason}` });
+        }).catch((reject) => {
+            console.log(reject);
+            return interaction.editReply({ content: `Error: ${reject.reason}`, ephemeral: true });
         });
 
     },

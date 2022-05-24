@@ -47,7 +47,7 @@ module.exports = {
             })
             .catch(err => {
                 console.log(err);
-                return interaction.reply('Error while searching for collection. Check for typos or try again.')
+                return interaction.reply({ content: 'Error while searching for collection. Check for typos or try again.', ephemeral: true })
             });
 
 

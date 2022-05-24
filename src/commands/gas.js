@@ -29,7 +29,7 @@ module.exports = {
                 .setTimestamp();
             return interaction.reply({ embeds: [embed] });
         } else {
-            return interaction.reply("Error fetching gas prices. Try again in a moment.")
+            return interaction.reply({ content: "Error fetching gas prices. Try again in a moment.", ephemeral: true })
         }
 
 

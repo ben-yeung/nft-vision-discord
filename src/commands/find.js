@@ -32,8 +32,8 @@ module.exports = {
     options: '[collection-slug]',
     async execute(interaction, args, client) {
 
-        if (db.get(`${interaction.user.id}.findstarted`) && Date.now() - db.get(`${interaction.user.id}.findstarted`) <= 15000) {
-            return interaction.reply(`Please close your most recent find command or wait ${ms(15000 - (Date.now() - db.get(`${interaction.user.id}.findstarted`)))} before starting another query!`)
+        if (db.get(`${interaction.user.id}.findstarted`) && Date.now() - db.get(`${interaction.user.id}.findstarted`) <= 6000) {
+            return interaction.reply({ content: `Please close your most recent find command or wait ${ms(6000 - (Date.now() - db.get(`${interaction.user.id}.findstarted`)))} before starting another query!`, ephemeral: true })
         } else {
             db.set(`${interaction.user.id}.findstarted`, Date.now())
             pruneQueries(interaction.user);
@@ -194,7 +194,7 @@ module.exports = {
             .catch(err => {
                 console.log(err);
                 db.delete(`${interaction.user.id}.findstarted`)
-                return interaction.editReply('Error while searching for collection. Check for typos or try again.')
+                return interaction.editReply({ content: 'Error while searching for collection. Check for typos or try again.', ephemeral: true })
             });
 
 

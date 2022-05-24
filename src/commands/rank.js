@@ -39,8 +39,8 @@ module.exports = {
     options: '[collection-slug] [token-id]',
     async execute(interaction, args, client) {
 
-        if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 5000) {
-            return interaction.reply(`Please wait ${ms(5000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`)
+        if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000) {
+            return interaction.reply({ content: `Please wait ${ms(10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`, ephemeral: true })
         } else {
             db.set(`${interaction.user.id}.assetstarted`, Date.now())
             pruneQueries(interaction.user);
@@ -49,10 +49,8 @@ module.exports = {
         let slug = interaction.options.getString('collection-slug');
         let token_id = interaction.options.getString('token-id');
 
-        await interaction.reply({ content: 'Searching for rarity ranks...', embeds: [] });
-
         getAsset(client, slug, token_id).then(async (res) => {
-
+            await interaction.reply({ content: 'Searching for rarity ranks...', embeds: [] });
             try {
                 let asset = res.assetObject;
                 let image_url = asset.image_url;
@@ -64,11 +62,11 @@ module.exports = {
 
                 var rankOBJ = await metaSchema.findOne({ slug: slug });
                 if (!rankOBJ) {
-                    interaction.editReply('Did not find that collection indexed yet. Queuing for rank calculation. Please check back later.')
+                    interaction.editReply({ content: 'Did not find that collection indexed yet. Queuing for rank calculation. Please check back later.', ephemeral: true })
                     indexCollection(client, slug).then(test => {
                         return interaction.editReply({ content: `<@${interaction.user.id}>, Finished indexing **${slug}**.` })
                     }).catch(err => {
-                        return interaction.editReply(err);
+                        return interaction.editReply({ content: err, ephemeral: true });
                     });
 
                     return;
@@ -278,11 +276,11 @@ module.exports = {
 
             } catch (err) {
                 console.log(err);
-                return interaction.editReply({ content: `Error parsing asset. Please try again.` });
+                return interaction.editReply({ content: `Error parsing asset. Please try again.`, ephemeral: true });
             }
 
         }).catch((res) => {
-            return interaction.editReply({ content: `Error: ${res.reason}` });
+            return interaction.reply({ content: res.reason, ephemeral: true });
         });
 
     },
