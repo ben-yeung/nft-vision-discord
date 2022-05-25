@@ -4,6 +4,7 @@ const guildSchema = require('../schemas/guild-schema');
 const botconfig = require('../botconfig.json');
 const { getAsset } = require('../utils/get-asset');
 const { indexCollection } = require('../utils/index-collection');
+const { indexAdvanced } = require('../utils/index-advanced');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,6 +22,12 @@ module.exports = {
         }).catch(err => {
             return interaction.editReply({ content: err, ephemeral: true });
         });
+
+        // indexAdvanced(client, slug).then(test => {
+        //     return interaction.editReply({ content: `<@${interaction.user.id}>, Finished indexing **${slug}**.` })
+        // }).catch(err => {
+        //     return interaction.editReply({ content: err, ephemeral: true });
+        // });
 
     },
 }

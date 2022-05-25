@@ -29,6 +29,7 @@ exports.indexCollection = async (client, collection_slug) => {
             .then(async (res) => {
 
                 const c = res.collection;
+                console.log(c)
                 const totalSupply = c.stats.total_supply;
                 let allTraits = c.traits;
                 if (!allTraits || Object.keys(allTraits).length == 0) return reject('Could not find traits for given collection. Metadata may not be revealed yet.')
@@ -55,7 +56,6 @@ exports.indexCollection = async (client, collection_slug) => {
                 const catSum = sum; // Used for trait count weighting when frequencies are found
 
                 console.log(allTraits)
-                console.log(categories)
 
                 // Calc trait rarity per category
                 var trait_rarity = {};
@@ -78,6 +78,7 @@ exports.indexCollection = async (client, collection_slug) => {
                         trait_rarity[category]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, count: totalSupply - categories[category] }
                     }
                 }
+                console.log(trait_rarity)
 
                 // Asset fetching in batches of 50 per call.
                 var cursor = '';
@@ -118,6 +119,7 @@ exports.indexCollection = async (client, collection_slug) => {
 
                         assetJSON.assets.forEach(asset => {
                             let { token_id, traits } = asset;
+                            console.log(traits);
 
                             if (traits.length > 0) {
 
@@ -130,6 +132,7 @@ exports.indexCollection = async (client, collection_slug) => {
                                 // Sum up rarity scores based on asset's traits
                                 for (var i = 0; i < asset_traits.length; i++) {
                                     const t = asset_traits[i];
+                                    console.log(t)
                                     none_categories = none_categories.filter(c => c !== t.trait_type);
                                     rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
                                     rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
