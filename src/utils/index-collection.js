@@ -54,21 +54,20 @@ exports.indexCollection = async (client, collection_slug) => {
                 const avgPerCat = sum / Object.keys(allTraits).length;
                 const catSum = sum; // Used for trait count weighting when frequencies are found
 
-                // console.log(allTraits)
+                console.log(allTraits)
+                console.log(categories)
 
                 // Calc trait rarity per category
                 var trait_rarity = {};
                 for (const category in allTraits) {
                     trait_rarity[category] = {};
                     let traits = allTraits[category];
-                    console.log(category)
-                    console.log(traits)
                     const trait_total = (totalSupply - categories[category] >= 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length);
                     Object.keys(traits).forEach((t) => {
                         let freq = traits[t] / totalSupply;
                         let rarity = 1 / freq;
                         let rarity_norm = rarity * (avgPerCat / trait_total);
-                        trait_rarity[category][t] = { rarity: rarity, rarity_norm: rarity_norm };
+                        trait_rarity[category][t] = { rarity: rarity, rarity_norm: rarity_norm, count: trait_total };
                     })
                     // Include rarity scores for if the NFT does not have the trait category. (4-T or 5-T rares)
                     // If all NFTs have the trait category 'none' will default to 0 for rarity score calc below
@@ -77,8 +76,6 @@ exports.indexCollection = async (client, collection_slug) => {
                         let none_rarity = 1 / none_freq;
                         let none_rarity_norm = none_rarity * (avgPerCat / trait_total);
                         trait_rarity[category]['none'] = { rarity: none_rarity, rarity_norm: none_rarity_norm, count: totalSupply - categories[category] }
-                    } else {
-                        trait_rarity[category]['none'] = { rarity: 0, rarity_norm: 0 }
                     }
                 }
 
@@ -86,7 +83,8 @@ exports.indexCollection = async (client, collection_slug) => {
                 var cursor = '';
                 client.OS_INDEX_QUEUE.push(collection_slug);
                 console.log(`Beginning to index ${collection_slug}`)
-                while (allTokensArr.length < totalSupply) {
+                var count = 0;
+                while (allTokensArr.length < totalSupply && cursor !== undefined) {
                     let error = false;
                     try {
                         while (client.OS_QUEUE_PRIO > 0 || client.OS_QUEUE >= 4 || (client.OS_INDEX_QUEUE.length > 0 && (collection_slug != client.OS_INDEX_QUEUE[0]) && collection_slug != client.OS_INDEX_QUEUE[1])) {
@@ -121,42 +119,48 @@ exports.indexCollection = async (client, collection_slug) => {
                         assetJSON.assets.forEach(asset => {
                             let { token_id, traits } = asset;
 
-                            const asset_traits = traits;
-                            var none_categories = Object.keys(categories);
-                            var trait_map = {}
+                            if (traits.length > 0) {
 
-                            var rarity_score = 0;
-                            var rarity_score_norm = 0;
-                            // Sum up rarity scores based on asset's traits
-                            for (var i = 0; i < asset_traits.length; i++) {
-                                const t = asset_traits[i];
-                                none_categories = none_categories.filter(c => c !== t.trait_type);
-                                rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
-                                rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
-                                trait_map[t.value] = trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
-                            }
-                            // Account for rarity in not having specific traits
-                            var none_list = {}
-                            for (var j = 0; j < none_categories.length; j++) {
-                                rarity_score += trait_rarity[none_categories[j]]['none'].rarity;
-                                rarity_score_norm += trait_rarity[none_categories[j]]['none'].rarity_norm;
-                                // Used in parse-traits.js when formatting traits and trait rarity scores into embed
-                                none_list[`**${none_categories[j][0].toUpperCase() + none_categories[j].substring(1)}:** None`] = [trait_rarity[none_categories[j]]['none'].rarity_norm, trait_rarity[none_categories[j]]['none'].count];
-                            }
-                            trait_map[`Other`] = none_list;
-                            if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0;
-                            num_traits_freq[asset_traits.length] += 1;
+                                const asset_traits = traits;
+                                var none_categories = Object.keys(categories);
+                                var trait_map = {}
 
-                            let asset_rarity = {
-                                token_id: token_id,
-                                trait_count: asset_traits.length,
-                                trait_map: trait_map,
-                                rarity_score: rarity_score,
-                                rarity_score_norm: rarity_score_norm
+                                var rarity_score = 0;
+                                var rarity_score_norm = 0;
+                                // Sum up rarity scores based on asset's traits
+                                for (var i = 0; i < asset_traits.length; i++) {
+                                    const t = asset_traits[i];
+                                    none_categories = none_categories.filter(c => c !== t.trait_type);
+                                    rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
+                                    rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
+                                    trait_map[t.value] = [trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm, t.trait_type];
+                                }
+                                // Account for rarity in not having specific traits
+                                var none_list = {}
+
+                                for (var j = 0; j < none_categories.length; j++) {
+                                    rarity_score += trait_rarity[none_categories[j]]['none'].rarity;
+                                    rarity_score_norm += trait_rarity[none_categories[j]]['none'].rarity_norm;
+                                    // Used in parse-traits.js when formatting traits and trait rarity scores into embed
+                                    none_list[`**${none_categories[j][0].toUpperCase() + none_categories[j].substring(1)}:** None`] = [trait_rarity[none_categories[j]]['none'].rarity_norm, trait_rarity[none_categories[j]]['none'].count];
+                                }
+                                trait_map[`OtherList`] = none_list;
+                                if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0;
+                                num_traits_freq[asset_traits.length] += 1;
+
+                                let asset_rarity = {
+                                    token_id: token_id,
+                                    trait_count: asset_traits.length,
+                                    trait_map: trait_map,
+                                    rarity_score: rarity_score,
+                                    rarity_score_norm: rarity_score_norm
+                                }
+                                allTokensArr.push(asset_rarity);
+
                             }
-                            allTokensArr.push(asset_rarity);
-                            // console.log(`Token ${token_id} : ${rarity_score}, ${rarity_score_norm}, ${rarity_score_avg} `);
+
                         });
+                        count += assetJSON.assets.length;
                         cursor = assetJSON.next;
                     } catch (err) {
                         console.log(err);
@@ -164,6 +168,8 @@ exports.indexCollection = async (client, collection_slug) => {
                     }
 
                 }
+
+                if (allTokensArr.length == 0) return reject('Error parsing collection\'s traits. Please try again later');
 
                 // Account for trait count weights and construct rankings
                 try {
@@ -188,7 +194,7 @@ exports.indexCollection = async (client, collection_slug) => {
 
                         // We make a deep copy of allTokensArr for allTokensTraitCount to separate sorting
                         // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
-                        allTokensArr[j].trait_map['Other'][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
+                        allTokensArr[j].trait_map['OtherList'][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
                     }
 
                     allTokensArr.sort((a, b) => {

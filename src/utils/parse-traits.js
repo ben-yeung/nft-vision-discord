@@ -19,13 +19,12 @@ exports.parseTraits = async (client, traits, trait_map) => {
         traits.sort((a, b) => (a.trait_count > b.trait_count) ? 1 : -1);
 
         if (trait_map) {
-            console.log(trait_map);
             for (var i = 0; i < traits.length; i++) {
-                traitDesc += `**${traits[i].trait_type}:** ${traits[i].value} • (1/${traits[i].trait_count}) • +${trait_map[traits[i].value].toFixed(2)} \n\n`;
+                traitDesc += `**${traits[i].trait_type}:** ${traits[i].value} • (1/${traits[i].trait_count}) • +${trait_map[traits[i].value][0].toFixed(2)} \n\n`;
             }
-            let none_traits = Object.keys(trait_map.Other);
+            let none_traits = Object.keys(trait_map.OtherList);
             for (var j = 0; j < none_traits.length; j++) {
-                traitDesc += `${none_traits[j]} • (1/${trait_map.Other[none_traits[j]][1]}) • +${trait_map.Other[none_traits[j]][0].toFixed(2)} \n\n`
+                traitDesc += `${none_traits[j]} • (1/${trait_map.OtherList[none_traits[j]][1]}) • +${trait_map.OtherList[none_traits[j]][0].toFixed(2)} \n\n`
             }
         } else {
             for (var i = 0; i < traits.length; i++) {
