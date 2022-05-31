@@ -58,7 +58,7 @@ client.on('ready', async () => {
         }
     })
 
-    client.user.setActivity('jpegs sell online', {
+    client.user.setActivity('jpegs closely', {
         type: 'WATCHING'
     });
 

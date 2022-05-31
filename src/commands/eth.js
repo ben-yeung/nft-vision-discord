@@ -33,7 +33,7 @@ module.exports = {
                 .setColor(44774)
 
             try {
-                response = await axios.get(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${botconfig.ETHERSCAN_API}`);
+                response = await axios.get(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${botconfig.ETHERSCAN_API_KEY}`);
             } catch (err) {
                 response = null;
                 console.log(err);
