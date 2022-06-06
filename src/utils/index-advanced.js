@@ -8,13 +8,15 @@ const async = require("async");
 
 var Web3 = require("web3");
 const { default: axios } = require("axios");
-var web3 = new Web3(new Web3.providers.HttpProvider(botconfig.LIGHT_NODE));
+var web3 = new Web3(new Web3.providers.HttpProvider(botconfig.LIGHT_NODE)); // insert provider http here
 const ether_key = botconfig.ETHERSCAN_API_KEY;
 
 /**
- * Function to calculate the rarity scores for a collection.
- * Utilizes Etherscan API and more specifically the tokenURI function of a standard ERC-721 smart contract
- * to build trait metadata for a collection.
+ * Function to calculate the rarity scores / rankings for a collection.
+ * Utilizes Etherscan API and more specifically the tokenURI function of a standard ERC-721 smart contract to index.
+ *
+ * For the web3 provider I recommend using a private eth node. Otherwise you will need to likely pay for premium plans with alchemy / infura
+ * This of course depends on your usage/traffic but with collections being upwards of 10k+ in size the calls add up!
  */
 
 function delay(ms) {

@@ -5,8 +5,14 @@ const metaSchema = require("../schemas/metadata-schema");
 const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 
 /**
- * Function to calculate the rarity scores for a collection.
- * Plans to store in mongoDB for indexed collections to prevent rate limits calling OS API
+ * Function to calculate the rarity scores / rankings for a collection.
+ * This indexing function uses OpenSea's API which limits to 50 assets per call and 4 calls per sec
+ *
+ * index-advanced.js uses Etherscan + web3.js to access tokenURI functions of collection to build/index metadata
+ * For the web3 provider I recommend using a private eth node. Otherwise you will need to likely pay for premium plans with alchemy / infura
+ * This of course depends on your usage/traffic but with collections being upwards of 10k+ in size the calls add up!
+ *
+ * This function is currently not being used in the product but I left it here as a reference or backup if needed.
  */
 
 function delay(ms) {
