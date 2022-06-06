@@ -9,17 +9,8 @@ const { indexAdvanced } = require("../utils/index-advanced");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("index")
-    .setDescription(
-      "Index a collection to see rarity rankings. May take some time."
-    )
-    .addStringOption((option) =>
-      option
-        .setName("collection-slug")
-        .setDescription(
-          "OpenSea Collection slug. Commmonly found in the URL of the collection."
-        )
-        .setRequired(true)
-    ),
+    .setDescription("Index a collection to see rarity rankings. May take some time.")
+    .addStringOption((option) => option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true)),
   options: "[collection-slug]",
   async execute(interaction, args, client) {
     let slug = interaction.options.getString("collection-slug");
@@ -29,8 +20,19 @@ module.exports = {
       embeds: [],
     });
 
-    indexCollection(client, slug)
-      .then((test) => {
+    // indexCollection(client, slug)
+    //   .then((unused) => {
+
+    //     // return interaction.editReply({
+    //     //   content: `<@${interaction.user.id}>, Finished indexing **${slug}**.`,
+    //     // });
+    //   })
+    //   .catch((err) => {
+    //     return interaction.editReply({ content: err, ephemeral: true });
+    //   });
+
+    indexAdvanced(client, slug)
+      .then((unused) => {
         return interaction.editReply({
           content: `<@${interaction.user.id}>, Finished indexing **${slug}**.`,
         });
@@ -38,15 +40,5 @@ module.exports = {
       .catch((err) => {
         return interaction.editReply({ content: err, ephemeral: true });
       });
-
-    // indexAdvanced(client, slug)
-    //   .then((test) => {
-    //     return interaction.editReply({
-    //       content: `<@${interaction.user.id}>, Finished indexing **${slug}**.`,
-    //     });
-    //   })
-    //   .catch((err) => {
-    //     return interaction.editReply({ content: err, ephemeral: true });
-    //   });
   },
 };
