@@ -66,6 +66,12 @@ exports.indexAdvanced = async (client, collection_slug) => {
                 await contract.methods["tokenURI"](token_id)
                   .call()
                   .then(async (tokenURI) => {
+                    // Check if uri is of form ipfs:// + ipfs hash
+                    // If so then we need to make it into a url that axios can fetch from using ipfs.io + hash
+                    if (tokenURI.substr(0, 7) == "ipfs://") {
+                      tokenURI = "https://ipfs.io/ipfs/" + tokenURI.substring(7, tokenURI.length);
+                    }
+
                     let res = await axios.get(tokenURI);
                     var traits = [];
                     for (var i = 0; i < res.data.attributes.length; i++) {

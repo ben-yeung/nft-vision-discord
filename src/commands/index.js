@@ -20,17 +20,6 @@ module.exports = {
       embeds: [],
     });
 
-    // indexCollection(client, slug)
-    //   .then((unused) => {
-
-    //     // return interaction.editReply({
-    //     //   content: `<@${interaction.user.id}>, Finished indexing **${slug}**.`,
-    //     // });
-    //   })
-    //   .catch((err) => {
-    //     return interaction.editReply({ content: err, ephemeral: true });
-    //   });
-
     indexAdvanced(client, slug)
       .then((unused) => {
         return interaction.editReply({
