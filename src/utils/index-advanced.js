@@ -5,6 +5,7 @@ const metaSchema = require("../schemas/metadata-schema");
 const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 const request = require("request");
 const async = require("async");
+var Mutex = require("async-mutex").Mutex;
 
 var Web3 = require("web3");
 const { default: axios } = require("axios");
@@ -26,11 +27,10 @@ function delay(ms) {
 }
 
 exports.indexAdvanced = async (client, collection_slug) => {
-  const rax = await import("retry-axios");
-  const interceptorId = rax.attach();
   return new Promise((resolve, reject) => {
     if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1) return reject("Collection is already queued for indexing. Please check back in a moment.");
 
+    const mutex = new Mutex(); // Used to synchronize metadata parsing since we are using async.eachLimit
     sdk["retrieving-a-single-collection"]({ collection_slug: collection_slug })
       .then(async (res) => {
         let collection_contract = res.collection.primary_asset_contracts[0].address;
@@ -92,7 +92,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                         value: value,
                       };
                       traits.push(payload);
-
+                      const release = await mutex.acquire();
                       if (!categories[category]) {
                         categories[category] = {};
                         categories[category]["count"] = 0;
@@ -100,6 +100,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                       }
                       categories[category]["traits"][value] = categories[category]["traits"][value] ? categories[category]["traits"][value] + 1 : 1;
                       categories[category]["count"] += 1;
+                      release();
                     }
                     tokens[token_id] = traits;
                     if (token_id % 50 == 0) {
@@ -123,24 +124,12 @@ exports.indexAdvanced = async (client, collection_slug) => {
                       var data;
                       if (tokenURI.substr(0, 7) == "ipfs://") {
                         tokenURI = await tokenURI.replace("ipfs://", "");
-                        const res = await axios.post(`https://ipfs.infura.io:5001/api/v0/get?arg=${tokenURI}`, {
-                          headers: {
-                            Authorization: botconfig.INFURA_IPFS,
-                          },
-                        });
+                        const res = await axios.get(`${botconfig.IPFS_GATEWAY}${tokenURI}`);
                         data = res.data;
-                        data = data.replace(/[\u0000-\u0019]+/g, "");
-                        var ind = 0;
-                        while (data[ind] != "{" && ind < data.length) {
-                          ind += 1;
-                        }
-                        data = data.slice(ind);
-                        data = await JSON.parse(data);
                       } else {
                         let res = await axios.get(tokenURI);
                         data = res.data;
                       }
-                      console.log(data);
 
                       var traits = [];
                       for (var i = 0; i < data.attributes.length; i++) {
@@ -151,7 +140,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                           value: value,
                         };
                         traits.push(payload);
-
+                        let release = await mutex.acquire();
                         if (!categories[category]) {
                           categories[category] = {};
                           categories[category]["count"] = 0;
@@ -159,6 +148,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                         }
                         categories[category]["traits"][value] = categories[category]["traits"][value] ? categories[category]["traits"][value] + 1 : 1;
                         categories[category]["count"] += 1;
+                        release();
                       }
                       tokens[token_id] = traits;
                     })

@@ -22,6 +22,7 @@
     "@discordjs/rest": "^0.4.1",
     "api": "^4.3.0",
     "async": "^3.2.3",
+    "async-mutex": "^0.3.2",
     "axios": "^0.27.1",
     "discord-api-types": "^0.31.2",
     "discord.js": "^13.6.0",
