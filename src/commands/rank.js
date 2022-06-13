@@ -6,7 +6,7 @@ const metaSchema = require("../schemas/metadata-schema");
 const botconfig = require("../botconfig.json");
 const { getAsset } = require("../utils/get-asset");
 const { parseTraits } = require("../utils/parse-traits");
-const { indexCollection } = require("../utils/index-collection");
+const { indexAdvanced } = require("../utils/index-advanced");
 const db = require("quick.db");
 const ms = require("ms");
 
@@ -28,6 +28,12 @@ function pruneQueries(author) {
   db.set(`${author.id}.assetquery`, queries);
 }
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -39,32 +45,13 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("rank")
     .setDescription("Get rank rarity for a given NFT.")
-    .addStringOption((option) =>
-      option
-        .setName("collection-slug")
-        .setDescription(
-          "OpenSea Collection slug. Commmonly found in the URL of the collection."
-        )
-        .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName("token-id")
-        .setDescription(
-          "NFT specific token id. Usually in name. Otherwise check txn for ID."
-        )
-        .setRequired(true)
-    ),
+    .addStringOption((option) => option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true))
+    .addStringOption((option) => option.setName("token-id").setDescription("NFT specific token id. Usually in name. Otherwise check txn for ID.").setRequired(true)),
   options: "[collection-slug] [token-id]",
   async execute(interaction, args, client) {
-    if (
-      db.get(`${interaction.user.id}.assetstarted`) &&
-      Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000
-    ) {
+    if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000) {
       return interaction.reply({
-        content: `Please wait ${ms(
-          10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`))
-        )} before starting another query!`,
+        content: `Please wait ${ms(10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`,
         ephemeral: true,
       });
     } else {
@@ -114,22 +101,21 @@ module.exports = {
           var rankOBJ = await metaSchema.findOne({ slug: slug });
           if (!rankOBJ) {
             interaction.editReply({
-              content:
-                "Did not find that collection indexed yet. Queuing for rank calculation. Please check back later.",
+              content: "Did not find that collection indexed yet. Queuing for rank calculation. Please check back later.",
               ephemeral: true,
             });
-            indexCollection(client, slug)
-              .then((test) => {
-                return interaction.editReply({
-                  content: `<@${interaction.user.id}>, Finished indexing **${slug}**.`,
+            await indexAdvanced(client, slug)
+              .then(async (test) => {
+                interaction.editReply({
+                  content: `<@${interaction.user.id}>, Finished indexing **${slug}**. Searching rarity rank for token ${token_id}`,
                 });
+                rankOBJ = await metaSchema.findOne({ slug: slug });
               })
               .catch((err) => {
                 return interaction.editReply({ content: err, ephemeral: true });
               });
-
-            return;
           }
+
           rankOBJ = rankOBJ.ranks[token_id];
           const rank_norm = rankOBJ.rank_norm;
           const rank_trait_count = rankOBJ.rank_trait_count;
@@ -139,10 +125,7 @@ module.exports = {
 
           let name = asset.name ? asset.name : `#${token_id}`;
           var owner_user = asset.owner.address.substring(2, 8).toUpperCase();
-          if (asset.owner.user)
-            owner_user = asset.owner.user.username
-              ? asset.owner.user.username
-              : owner_user;
+          if (asset.owner.user) owner_user = asset.owner.user.username ? asset.owner.user.username : owner_user;
           let owner = `[${owner_user}](https://opensea.io/${asset.owner.address})`;
           let num_sales = asset.num_sales ? String(asset.num_sales) : "0";
           var last_sale = "None";
@@ -150,16 +133,9 @@ module.exports = {
           if (asset.last_sale) {
             let symbol;
             let price_sold = asset.last_sale.total_price / Math.pow(10, 18);
-            var date = new Date(
-              `${asset.last_sale.event_timestamp.substring(0, 10)} 00:00`
-            );
-            last_sale_date = `(${
-              Number(date.getMonth()) + 1
-            }/${date.getDate()}/${date.getFullYear()})`;
-            let usd = `${currency.format(
-              Number(price_sold) *
-                Number(asset.last_sale.payment_token.usd_price)
-            )}`;
+            var date = new Date(`${asset.last_sale.event_timestamp.substring(0, 10)} 00:00`);
+            last_sale_date = `(${Number(date.getMonth()) + 1}/${date.getDate()}/${date.getFullYear()})`;
+            let usd = `${currency.format(Number(price_sold) * Number(asset.last_sale.payment_token.usd_price))}`;
 
             switch (asset.last_sale.payment_token.symbol) {
               case "ETH":
@@ -187,13 +163,8 @@ module.exports = {
                 symbol = " " + listings[0].payment_token_contract.symbol;
                 break;
             }
-            let usd = `${currency.format(
-              Number(listings[0].current_price / Math.pow(10, 18)) *
-                Number(listings[0].payment_token_contract.usd_price)
-            )}`;
-            curr_listing = `${Number(
-              listings[0].current_price / Math.pow(10, 18)
-            ).toFixed(4)}${symbol} (${usd})`;
+            let usd = `${currency.format(Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price))}`;
+            curr_listing = `${Number(listings[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`;
           }
 
           let bids = res.bids;
@@ -209,13 +180,8 @@ module.exports = {
                 symbol = " " + bids[0].payment_token_contract.symbol;
                 break;
             }
-            let usd = `${currency.format(
-              Number(bids[0].current_price / Math.pow(10, 18)) *
-                Number(bids[0].payment_token_contract.usd_price)
-            )}`;
-            highest_bid = `${
-              bids[0].current_price / Math.pow(10, 18)
-            }${symbol} (${usd})`;
+            let usd = `${currency.format(Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price))}`;
+            highest_bid = `${bids[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`;
           }
 
           let sales = res.sales;
@@ -231,13 +197,8 @@ module.exports = {
                 symbol = " " + sales[0].payment_token.symbol;
                 break;
             }
-            let usd = `${currency.format(
-              Number(sales[0].total_price / Math.pow(10, 18)) *
-                Number(sales[0].payment_token.usd_price)
-            )}`;
-            highest_sale = `${
-              sales[0].total_price / Math.pow(10, 18)
-            }${symbol} (${usd})`;
+            let usd = `${currency.format(Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price))}`;
+            highest_sale = `${sales[0].total_price / Math.pow(10, 18)}${symbol} (${usd})`;
           }
 
           let traits = asset.traits ? asset.traits : "Unrevealed";
@@ -245,37 +206,19 @@ module.exports = {
           let collection = asset.asset_contract.name;
           let collection_img = asset.asset_contract.image_url;
 
-          var traitDesc = await parseTraits(client, traits, trait_map).catch(
-            (err) => console.log(err)
-          );
+          var traitDesc = await parseTraits(client, traits, trait_map).catch((err) => console.log(err));
           traitDesc += `**Animated:** ${animation_url}`;
 
           const row = new MessageActionRow()
-            .addComponents(
-              new MessageButton()
-                .setCustomId("asset_sales")
-                .setLabel("Show Sales")
-                .setStyle("SUCCESS")
-            )
-            .addComponents(
-              new MessageButton()
-                .setCustomId("asset_traits")
-                .setLabel("Show Traits")
-                .setStyle("PRIMARY")
-            );
+            .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
+            .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"));
 
           let embedRank = new Discord.MessageEmbed()
             .setTitle(`${name} | ${collection}`)
             .setURL(OS_link)
             .setImage(image_url)
-            .addField(
-              `Rank #${rank_norm}`,
-              `*Trait Normalization* \n Rarity Score ${rank_norm_score}`
-            )
-            .addField(
-              `Rank #${rank_trait_count}`,
-              `*Trait Count Weighting* \n Rarity Score ${rank_trait_score}`
-            )
+            .addField(`Rank #${rank_norm}`, `*Trait Normalization* \n Rarity Score ${rank_norm_score}`)
+            .addField(`Rank #${rank_trait_count}`, `*Trait Count Weighting* \n Rarity Score ${rank_trait_score}`)
             .setThumbnail(collection_img)
             .setFooter({
               text: `Slug: ${slug} • Token: ${token_id} • Total Sales: ${num_sales}`,
@@ -311,33 +254,20 @@ module.exports = {
             components: [row],
           });
 
-          let currQueries =
-            db.get(`${interaction.user.id}.assetquery`) != null
-              ? db.get(`${interaction.user.id}.assetquery`)
-              : {};
-          currQueries[interaction.id] = [
-            embedRank,
-            embedSales,
-            embedTraits,
-            Date.now(),
-          ];
+          let currQueries = db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {};
+          currQueries[interaction.id] = [embedRank, embedSales, embedTraits, Date.now()];
           db.set(`${interaction.user.id}.assetquery`, currQueries);
 
           const message = await interaction.fetchReply();
 
           const filter = (btn) => {
-            return (
-              btn.user.id === interaction.user.id &&
-              btn.message.id == message.id
-            );
+            return btn.user.id === interaction.user.id && btn.message.id == message.id;
           };
 
-          const collector = interaction.channel.createMessageComponentCollector(
-            {
-              filter,
-              time: 1000 * 90,
-            }
-          );
+          const collector = interaction.channel.createMessageComponentCollector({
+            filter,
+            time: 1000 * 90,
+          });
 
           collector.on("collect", async (button) => {
             let queries = db.get(`${interaction.user.id}.assetquery`);
@@ -350,54 +280,24 @@ module.exports = {
 
             if (button.customId == "asset_traits") {
               const row = new MessageActionRow()
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_sales")
-                    .setLabel("Show Sales")
-                    .setStyle("SUCCESS")
-                )
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_rank")
-                    .setLabel("Show Rank")
-                    .setStyle("PRIMARY")
-                );
+                .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
+                .addComponents(new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("PRIMARY"));
               await interaction.editReply({
                 embeds: [traitsEmbed],
                 components: [row],
               });
             } else if (button.customId == "asset_sales") {
               const row = new MessageActionRow()
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_traits")
-                    .setLabel("Show Traits")
-                    .setStyle("SUCCESS")
-                )
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_rank")
-                    .setLabel("Show Rank")
-                    .setStyle("PRIMARY")
-                );
+                .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"))
+                .addComponents(new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("PRIMARY"));
               await interaction.editReply({
                 embeds: [salesEmbed],
                 components: [row],
               });
             } else if (button.customId == "asset_rank") {
               const row = new MessageActionRow()
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_sales")
-                    .setLabel("Show Sales")
-                    .setStyle("SUCCESS")
-                )
-                .addComponents(
-                  new MessageButton()
-                    .setCustomId("asset_traits")
-                    .setLabel("Show Traits")
-                    .setStyle("PRIMARY")
-                );
+                .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
+                .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"));
               await interaction.editReply({
                 embeds: [rankEmbed],
                 components: [row],

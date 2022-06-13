@@ -26,6 +26,8 @@ function delay(ms) {
 }
 
 exports.indexAdvanced = async (client, collection_slug) => {
+  const rax = await import("retry-axios");
+  const interceptorId = rax.attach();
   return new Promise((resolve, reject) => {
     if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1) return reject("Collection is already queued for indexing. Please check back in a moment.");
 
@@ -67,16 +69,24 @@ exports.indexAdvanced = async (client, collection_slug) => {
                   .call()
                   .then(async (tokenURI) => {
                     // Check if uri is of form ipfs:// + ipfs hash
-                    // If so then we need to make it into a url that axios can fetch from using ipfs.io + hash
+                    // If so we need a gateway to be able to fetch the metadata stored at the ipfs hash
+                    // Using a public ipfs gateway can become rate limited given we are running async.eachLimit
+                    // Pintata Cloud provides private gateways via premium plans
+                    // This implementation uses a private ipfs gateway to facilitate ipfs calls
+                    var data;
                     if (tokenURI.substr(0, 7) == "ipfs://") {
-                      tokenURI = "https://ipfs.io/ipfs/" + tokenURI.substring(7, tokenURI.length);
+                      tokenURI = await tokenURI.replace("ipfs://", "");
+                      const res = await axios.get(`${botconfig.IPFS_GATEWAY}${tokenURI}`);
+                      data = res.data;
+                    } else {
+                      let res = await axios.get(tokenURI);
+                      data = res.data;
                     }
 
-                    let res = await axios.get(tokenURI);
                     var traits = [];
-                    for (var i = 0; i < res.data.attributes.length; i++) {
-                      let category = res.data.attributes[i].trait_type;
-                      let value = res.data.attributes[i].value;
+                    for (var i = 0; i < data.attributes.length; i++) {
+                      let category = data.attributes[i].trait_type;
+                      let value = data.attributes[i].value;
                       let payload = {
                         trait_type: category,
                         value: value,
@@ -97,7 +107,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     }
                   })
                   .catch((err) => {
-                    // console.log(err);
+                    console.log(err);
                     leftover.push(token_id);
                   });
               },
@@ -110,11 +120,32 @@ exports.indexAdvanced = async (client, collection_slug) => {
                   await contract.methods["tokenURI"](token_id)
                     .call()
                     .then(async (tokenURI) => {
-                      let res = await axios.get(tokenURI);
+                      var data;
+                      if (tokenURI.substr(0, 7) == "ipfs://") {
+                        tokenURI = await tokenURI.replace("ipfs://", "");
+                        const res = await axios.post(`https://ipfs.infura.io:5001/api/v0/get?arg=${tokenURI}`, {
+                          headers: {
+                            Authorization: botconfig.INFURA_IPFS,
+                          },
+                        });
+                        data = res.data;
+                        data = data.replace(/[\u0000-\u0019]+/g, "");
+                        var ind = 0;
+                        while (data[ind] != "{" && ind < data.length) {
+                          ind += 1;
+                        }
+                        data = data.slice(ind);
+                        data = await JSON.parse(data);
+                      } else {
+                        let res = await axios.get(tokenURI);
+                        data = res.data;
+                      }
+                      console.log(data);
+
                       var traits = [];
-                      for (var i = 0; i < res.data.attributes.length; i++) {
-                        let category = res.data.attributes[i].trait_type;
-                        let value = res.data.attributes[i].value;
+                      for (var i = 0; i < data.attributes.length; i++) {
+                        let category = data.attributes[i].trait_type;
+                        let value = data.attributes[i].value;
                         let payload = {
                           trait_type: category,
                           value: value,
@@ -242,7 +273,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     }
                   }
 
-                  if (allTokensArr.length == 0) return reject("Error parsing collection's traits. Please try again later");
+                  if (allTokensArr.length == 0) return reject("Error parsing collection's traits (Metadata may not be fully published yet). Please try again later");
 
                   // Account for trait count weights and construct rankings
                   try {
