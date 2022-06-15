@@ -2,7 +2,6 @@ const Discord = require("discord.js");
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const guildSchema = require("../schemas/guild-schema");
 const botconfig = require("../botconfig.json");
-const { getAsset } = require("../utils/get-asset");
 const { indexCollection } = require("../utils/index-collection");
 const { indexAdvanced } = require("../utils/index-advanced");
 
