@@ -10,6 +10,7 @@ const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 const db = require("quick.db");
 const ms = require("ms");
 const { getLooksRareAsset } = require("../utils/get-looksrare-asset");
+const { concatSeries } = require("async");
 
 /*
     quick.db is used for command spam prevention
@@ -22,7 +23,7 @@ function pruneQueries(author) {
   if (!queries) return;
 
   for (const [key, val] of Object.entries(queries)) {
-    if (Date.now() - val[2] >= 90000) {
+    if (Date.now() - val[0] >= 90000) {
       delete queries[key];
     }
   }
@@ -34,6 +35,12 @@ const currency = new Intl.NumberFormat("en-US", {
   currency: "USD",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+});
+
+const dateFormat = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
 });
 
 module.exports = {
@@ -107,7 +114,7 @@ module.exports = {
             var last_sale_formatted = "None";
             if (last_sale != "None") {
               let symbol = last_sale.symbol;
-              let usd = last_sale.usd;
+              let usd = currency.format(last_sale.usd);
               let marketplace = last_sale.name;
 
               switch (marketplace) {
@@ -132,6 +139,41 @@ module.exports = {
               }
 
               last_sale_formatted = `${marketplace} ${last_sale.price}${symbol} (${usd})`;
+            }
+
+            var salesHistory = "";
+            if (num_sales > 0) {
+              let datedSales = allSales.sort((a, b) => b.date - a.date);
+              for (var i = 0; i < num_sales; i++) {
+                let sale = datedSales[i];
+                let date = new Date(sale.date * 1000);
+                let symbol = sale.symbol;
+                let usd = currency.format(sale.usd);
+                let marketplace = sale.name;
+
+                switch (marketplace) {
+                  case "OpenSea":
+                    marketplace = OSEmoji;
+                    break;
+                  case "LooksRare":
+                    marketplace = LooksEmoji;
+                    break;
+                  default:
+                    marketplace = "";
+                    break;
+                }
+
+                switch (symbol) {
+                  case "ETH":
+                    symbol = "Ξ";
+                    break;
+
+                  default:
+                    break;
+                }
+
+                salesHistory += `${marketplace} \`${dateFormat.format(date)}\` • **${sale.price}${symbol}** *(${usd})* \n`;
+              }
             }
 
             let listings = res.listings;
@@ -162,7 +204,7 @@ module.exports = {
                   default:
                     break;
                 }
-                let usd = listings[i].usd;
+                let usd = currency.format(listings[i].usd);
                 curr_listings += `${marketplace} ${listings[i].price}${symbol} (${usd}) \n`;
               }
             }
@@ -170,6 +212,7 @@ module.exports = {
             let bids = res.offers;
             var highest_bid = "None";
             if (bids && bids.length > 0) {
+              bids = bids.sort((a, b) => b.usd - a.usd);
               let symbol = bids[0].symbol;
               let marketplace = bids[0].name;
 
@@ -201,6 +244,7 @@ module.exports = {
             let sales = res.sales;
             var highest_sale = "None";
             if (sales && sales.length > 0) {
+              sales = sales.sort((a, b) => b.usd - a.usd);
               let symbol = sales[0].symbol;
               let marketplace = sales[0].name;
 
@@ -223,7 +267,7 @@ module.exports = {
                 default:
                   break;
               }
-              let usd = sales[0].usd;
+              let usd = currency.format(sales[0].usd);
               let price = sales[0].price;
               highest_sale = `${marketplace} ${price}${symbol} (${usd})`;
             }
@@ -234,7 +278,10 @@ module.exports = {
             let collection_img = asset.asset_contract.image_url;
             var traitDesc = await parseTraits(client, traits).catch((err) => console.log(err));
 
-            const row = new MessageActionRow().addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"));
+            const row = new MessageActionRow().addComponents(
+              new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+              new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+            );
 
             let embed = new Discord.MessageEmbed()
               .setTitle(`${name} | ${collection}`)
@@ -262,6 +309,19 @@ module.exports = {
               .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
               .setColor(44774);
 
+            let embedSales = new Discord.MessageEmbed()
+              .setTitle(`${name} | ${collection}`)
+              .setURL(OS_link)
+              .setThumbnail(image_url)
+              .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
+              .setColor(44774);
+
+            if (salesHistory != "") {
+              embedSales.setDescription(salesHistory);
+            } else {
+              embedSales.setDescription("No sales history found yet.");
+            }
+
             await interaction.editReply({
               content: " ­",
               embeds: [embed],
@@ -269,7 +329,7 @@ module.exports = {
             });
 
             let currQueries = db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {};
-            currQueries[interaction.id] = [embed, embedTraits, Date.now()];
+            currQueries[interaction.id] = [Date.now(), embed, embedTraits, embedSales];
             db.set(`${interaction.user.id}.assetquery`, currQueries);
 
             const message = await interaction.fetchReply();
@@ -288,19 +348,35 @@ module.exports = {
               if (!queries || !queries[interaction.id]) {
                 return button.deferUpdate();
               }
-              let salesEmbed = queries[interaction.id][0];
-              let traitsEmbed = queries[interaction.id][1];
+              let salesEmbed = queries[interaction.id][1];
+              let traitsEmbed = queries[interaction.id][2];
+              let historyEmbed = queries[interaction.id][3];
 
               if (button.customId == "asset_traits") {
-                const row = new MessageActionRow().addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"));
+                const row = new MessageActionRow().addComponents(
+                  new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                  new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+                );
                 await interaction.editReply({
                   embeds: [traitsEmbed],
                   components: [row],
                 });
               } else if (button.customId == "asset_sales") {
-                const row = new MessageActionRow().addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"));
+                const row = new MessageActionRow().addComponents(
+                  new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+                  new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+                );
                 await interaction.editReply({
                   embeds: [salesEmbed],
+                  components: [row],
+                });
+              } else if (button.customId == "asset_history") {
+                const row = new MessageActionRow().addComponents(
+                  new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                  new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY")
+                );
+                await interaction.editReply({
+                  embeds: [historyEmbed],
                   components: [row],
                 });
               }
@@ -316,17 +392,6 @@ module.exports = {
         })
         .catch((err) => {
           console.log(err);
-        });
-
-      // Get OS Asset and start building embed
-      getOpenSeaAsset(client, collection_contract, token_id)
-        .then(async (res) => {})
-        .catch((reject) => {
-          console.log(reject);
-          return interaction.editReply({
-            content: `Error: ${reject.reason}`,
-            ephemeral: true,
-          });
         });
     });
   },

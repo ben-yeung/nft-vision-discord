@@ -8,13 +8,6 @@ const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 const { getOpenSeaAsset } = require("./get-os-asset");
 const { getLooksRareAsset } = require("./get-looksrare-asset");
 
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
 function sortPrice(a, b) {
   if (a.price < b.price) {
     return -1;
@@ -56,7 +49,7 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             allListings.push({
               name: "OpenSea",
               price: price,
-              usd: currency.format(Number(price) * Number(listings[0].payment_token_contract.usd_price)),
+              usd: Number(price) * Number(listings[0].payment_token_contract.usd_price),
               symbol: listings[0].payment_token_contract.symbol,
             });
           }
@@ -65,14 +58,10 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             allListings.push({
               name: "LooksRare",
               price: price,
-              usd: currency.format(Number(price) * Number(client.eth[0])),
-              symbol: "WETH",
+              usd: Number(price) * Number(client.eth[0]),
+              symbol: " WETH",
             });
           }
-
-          allListings.sort((a, b) => {
-            return b.price - a.price;
-          });
 
           // Parse offers
           var allOffers = [];
@@ -94,12 +83,9 @@ exports.getAsset = async (client, collection_slug, token_id) => {
               name: "LooksRare",
               price: price,
               usd: Number(price) * Number(client.eth[0]),
-              symbol: "WETH",
+              symbol: " WETH",
             });
           }
-          allOffers.sort((a, b) => {
-            return b.usd - a.usd;
-          });
 
           // Parse sales history
           var allSales = [];
@@ -107,11 +93,14 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             let sales = openAsset.sales;
             for (var i = 0; i < sales.length; i++) {
               let price = Number((sales[i].total_price / Math.pow(10, 18)).toFixed(4));
+              var date = new Date(sales[i].event_timestamp);
+              var milliseconds = Math.floor(date.getTime() / 1000);
               allSales.push({
                 name: "OpenSea",
                 price: price,
-                usd: currency.format(price * Number(sales[i].payment_token.usd_price)),
+                usd: price * Number(sales[i].payment_token.usd_price),
                 symbol: sales[i].payment_token.symbol,
+                date: milliseconds,
               });
             }
           }
@@ -119,18 +108,16 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             let sales = looksAsset.sales.all_sales;
             for (var i = 0; i < sales.length; i++) {
               let price = Number((Number(sales[i].order.price) / Math.pow(10, 18)).toFixed(4));
+              let timestamp = Number(sales[i].order.endTime);
               allSales.push({
                 name: "LooksRare",
                 price: price,
-                usd: currency.format(price * Number(client.eth[0])),
-                symbol: "WETH",
+                usd: price * Number(client.eth[0]),
+                symbol: " WETH",
+                date: timestamp,
               });
             }
           }
-
-          allSales.sort((a, b) => {
-            return b.price - a.price;
-          });
 
           // Parse last sales
           var lastSale = "None";
@@ -139,11 +126,11 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             var date = new Date(openAsset.assetObject.last_sale.event_timestamp);
             var milliseconds = Math.floor(date.getTime() / 1000);
             if (milliseconds > lastSaleDate) {
-              let price = openAsset.assetObject.last_sale.total_price / Math.pow(10, 18);
+              let price = Number((openAsset.assetObject.last_sale.total_price / Math.pow(10, 18)).toFixed(4));
               lastSale = {
                 name: "OpenSea",
                 price: price,
-                usd: currency.format(Number(price) * Number(openAsset.assetObject.last_sale.payment_token.usd_price)),
+                usd: Number(price) * Number(openAsset.assetObject.last_sale.payment_token.usd_price),
                 symbol: openAsset.assetObject.last_sale.payment_token.symbol,
                 date: milliseconds,
               };
@@ -151,14 +138,14 @@ exports.getAsset = async (client, collection_slug, token_id) => {
             }
           }
           if (looksAsset.sales && looksAsset.sales.has_sales) {
-            let timestamp = looksAsset.sales.last_sale.endTime;
+            let timestamp = Number(looksAsset.sales.last_sale.endTime);
             if (timestamp > lastSaleDate) {
-              let price = Number(looksAsset.sales.last_sale.price) / Math.pow(10, 18);
+              let price = Number((Number(looksAsset.sales.last_sale.price) / Math.pow(10, 18)).toFixed(4));
               lastSale = {
                 name: "LooksRare",
                 price: price,
-                usd: currency.format(Number(price) * Number(client.eth[0])),
-                symbol: "WETH",
+                usd: Number(price) * Number(client.eth[0]),
+                symbol: " WETH",
                 date: timestamp,
               };
               lastSaleDate = timestamp;

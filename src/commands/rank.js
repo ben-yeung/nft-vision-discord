@@ -4,7 +4,7 @@ const { MessageEmbed, MessageActionRow, MessageButton } = require("discord.js");
 const guildSchema = require("../schemas/guild-schema");
 const metaSchema = require("../schemas/metadata-schema");
 const botconfig = require("../botconfig.json");
-const { getAsset } = require("../utils/get-os-asset");
+const { getAsset } = require("../utils/get-asset");
 const { parseTraits } = require("../utils/parse-traits");
 const { indexAdvanced } = require("../utils/index-advanced");
 const db = require("quick.db");
@@ -39,6 +39,12 @@ const currency = new Intl.NumberFormat("en-US", {
   currency: "USD",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+});
+
+const dateFormat = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
 });
 
 module.exports = {
@@ -121,97 +127,196 @@ module.exports = {
           const rank_trait_count = rankOBJ.rank_trait_count;
           const rank_norm_score = rankOBJ.rarity_score_norm.toFixed(2);
           const rank_trait_score = rankOBJ.rarity_score_trait.toFixed(2);
+          let traits = asset.traits ? asset.traits : "Unrevealed";
           const trait_map = rankOBJ.trait_map;
 
+          var traitDesc = await parseTraits(client, traits, trait_map).catch((err) => console.log(err));
+          traitDesc += `**Animated:** ${animation_url}`;
+
+          const OSEmoji = client.emojis.cache.get("986139643399512105");
+          const LooksEmoji = client.emojis.cache.get("986139630845980713");
+
           let name = asset.name ? asset.name : `#${token_id}`;
+
           var owner_user = asset.owner.address.substring(2, 8).toUpperCase();
           if (asset.owner.user) owner_user = asset.owner.user.username ? asset.owner.user.username : owner_user;
           let owner = `[${owner_user}](https://opensea.io/${asset.owner.address})`;
-          let num_sales = asset.num_sales ? String(asset.num_sales) : "0";
-          var last_sale = "None";
-          var last_sale_date = "";
-          if (asset.last_sale) {
-            let symbol;
-            let price_sold = asset.last_sale.total_price / Math.pow(10, 18);
-            var date = new Date(`${asset.last_sale.event_timestamp.substring(0, 10)} 00:00`);
-            last_sale_date = `(${Number(date.getMonth()) + 1}/${date.getDate()}/${date.getFullYear()})`;
-            let usd = `${currency.format(Number(price_sold) * Number(asset.last_sale.payment_token.usd_price))}`;
 
-            switch (asset.last_sale.payment_token.symbol) {
+          let allSales = res.sales;
+
+          let num_sales = allSales.length;
+          const last_sale = res.last_sale;
+          var last_sale_date = last_sale.date;
+          var last_sale_formatted = "None";
+          if (last_sale != "None") {
+            let symbol = last_sale.symbol;
+            let usd = currency.format(last_sale.usd);
+            let marketplace = last_sale.name;
+
+            switch (marketplace) {
+              case "OpenSea":
+                marketplace = OSEmoji;
+                break;
+              case "LooksRare":
+                marketplace = LooksEmoji;
+                break;
+              default:
+                marketplace = "";
+                break;
+            }
+
+            switch (symbol) {
               case "ETH":
                 symbol = "Ξ";
                 break;
 
               default:
-                symbol = " " + asset.last_sale.payment_token.symbol;
                 break;
             }
 
-            last_sale = `${price_sold}${symbol} (${usd})`;
+            last_sale_formatted = `${marketplace} ${last_sale.price}${symbol} (${usd})`;
+          }
+
+          var salesHistory = "";
+          if (num_sales > 0) {
+            let datedSales = allSales.sort((a, b) => b.date - a.date);
+            for (var i = 0; i < num_sales; i++) {
+              let sale = datedSales[i];
+              let date = new Date(sale.date * 1000);
+              let symbol = sale.symbol;
+              let usd = currency.format(sale.usd);
+              let marketplace = sale.name;
+
+              switch (marketplace) {
+                case "OpenSea":
+                  marketplace = OSEmoji;
+                  break;
+                case "LooksRare":
+                  marketplace = LooksEmoji;
+                  break;
+                default:
+                  marketplace = "";
+                  break;
+              }
+
+              switch (symbol) {
+                case "ETH":
+                  symbol = "Ξ";
+                  break;
+
+                default:
+                  break;
+              }
+
+              salesHistory += `${marketplace} \`${dateFormat.format(date)}\` • **${sale.price}${symbol}** *(${usd})* \n`;
+            }
           }
 
           let listings = res.listings;
-          var curr_listing = "N/A";
+          var curr_listings = "N/A";
           if (listings && listings.length > 0) {
-            let symbol;
-            switch (listings[0].payment_token_contract.symbol) {
-              case "ETH":
-                symbol = "Ξ";
-                break;
+            curr_listings = "";
 
-              default:
-                symbol = " " + listings[0].payment_token_contract.symbol;
-                break;
+            for (var i = 0; i < listings.length; i++) {
+              let symbol = listings[i].symbol;
+              let marketplace = listings[i].name;
+
+              switch (marketplace) {
+                case "OpenSea":
+                  marketplace = OSEmoji;
+                  break;
+                case "LooksRare":
+                  marketplace = LooksEmoji;
+                  break;
+                default:
+                  marketplace = "";
+                  break;
+              }
+              switch (symbol) {
+                case "ETH":
+                  symbol = "Ξ";
+                  break;
+
+                default:
+                  break;
+              }
+              let usd = currency.format(listings[i].usd);
+              curr_listings += `${marketplace} ${listings[i].price}${symbol} (${usd}) \n`;
             }
-            let usd = `${currency.format(Number(listings[0].current_price / Math.pow(10, 18)) * Number(listings[0].payment_token_contract.usd_price))}`;
-            curr_listing = `${Number(listings[0].current_price / Math.pow(10, 18)).toFixed(4)}${symbol} (${usd})`;
           }
 
-          let bids = res.bids;
+          let bids = res.offers;
           var highest_bid = "None";
           if (bids && bids.length > 0) {
-            let symbol;
-            switch (bids[0].payment_token_contract.symbol) {
+            bids = bids.sort((a, b) => b.usd - a.usd);
+            let symbol = bids[0].symbol;
+            let marketplace = bids[0].name;
+
+            switch (marketplace) {
+              case "OpenSea":
+                marketplace = OSEmoji;
+                break;
+              case "LooksRare":
+                marketplace = LooksEmoji;
+                break;
+              default:
+                marketplace = "";
+                break;
+            }
+
+            switch (symbol) {
               case "ETH":
                 symbol = "Ξ";
                 break;
 
               default:
-                symbol = " " + bids[0].payment_token_contract.symbol;
                 break;
             }
-            let usd = `${currency.format(Number(bids[0].current_price / Math.pow(10, 18)) * Number(bids[0].payment_token_contract.usd_price))}`;
-            highest_bid = `${bids[0].current_price / Math.pow(10, 18)}${symbol} (${usd})`;
+            let usd = currency.format(bids[0].usd);
+            let price = bids[0].price;
+            highest_bid = `${marketplace} ${price}${symbol} (${usd})`;
           }
 
           let sales = res.sales;
           var highest_sale = "None";
           if (sales && sales.length > 0) {
-            let symbol;
-            switch (sales[0].payment_token.symbol) {
+            sales = sales.sort((a, b) => b.usd - a.usd);
+            let symbol = sales[0].symbol;
+            let marketplace = sales[0].name;
+
+            switch (marketplace) {
+              case "OpenSea":
+                marketplace = OSEmoji;
+                break;
+              case "LooksRare":
+                marketplace = LooksEmoji;
+                break;
+              default:
+                marketplace = "";
+                break;
+            }
+            switch (symbol) {
               case "ETH":
                 symbol = "Ξ";
                 break;
 
               default:
-                symbol = " " + sales[0].payment_token.symbol;
                 break;
             }
-            let usd = `${currency.format(Number(sales[0].total_price / Math.pow(10, 18)) * Number(sales[0].payment_token.usd_price))}`;
-            highest_sale = `${sales[0].total_price / Math.pow(10, 18)}${symbol} (${usd})`;
+            let usd = currency.format(sales[0].usd);
+            let price = sales[0].price;
+            highest_sale = `${marketplace} ${price}${symbol} (${usd})`;
           }
 
-          let traits = asset.traits ? asset.traits : "Unrevealed";
           let OS_link = asset.permalink;
           let collection = asset.asset_contract.name;
           let collection_img = asset.asset_contract.image_url;
 
-          var traitDesc = await parseTraits(client, traits, trait_map).catch((err) => console.log(err));
-          traitDesc += `**Animated:** ${animation_url}`;
-
-          const row = new MessageActionRow()
-            .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
-            .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"));
+          const row = new MessageActionRow().addComponents(
+            new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+            new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY"),
+            new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SECONDARY")
+          );
 
           let embedRank = new Discord.MessageEmbed()
             .setTitle(`${name} | ${collection}`)
@@ -225,20 +330,23 @@ module.exports = {
             })
             .setColor(44774);
 
-          let embedSales = new Discord.MessageEmbed()
+          let embed = new Discord.MessageEmbed()
             .setTitle(`${name} | ${collection}`)
             .setURL(OS_link)
             .setImage(image_url)
             .addField(`Owned By`, owner)
-            .addField(`Listed For`, curr_listing)
-            .addField(`Highest Bid`, highest_bid)
-            .addField(`Highest Sale`, highest_sale)
-            .addField(`Last Sale`, last_sale)
+            .addField(`Listed For`, curr_listings)
             .setThumbnail(collection_img)
             .setFooter({
               text: `Slug: ${slug} • Token: ${token_id} • Total Sales: ${num_sales}`,
             })
             .setColor(44774);
+
+          if (highest_bid != "None") {
+            embed.addField(`Highest Bid`, highest_bid);
+          }
+
+          embed.addField(`Highest Sale`, highest_sale).addField(`Last Sale`, last_sale_formatted);
 
           let embedTraits = new Discord.MessageEmbed()
             .setTitle(`${name} | ${collection}`)
@@ -248,6 +356,19 @@ module.exports = {
             .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
             .setColor(44774);
 
+          let embedSales = new Discord.MessageEmbed()
+            .setTitle(`${name} | ${collection}`)
+            .setURL(OS_link)
+            .setThumbnail(image_url)
+            .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
+            .setColor(44774);
+
+          if (salesHistory != "") {
+            embedSales.setDescription(salesHistory);
+          } else {
+            embedSales.setDescription("No sales history found yet.");
+          }
+
           await interaction.editReply({
             content: " ­",
             embeds: [embedRank],
@@ -255,7 +376,7 @@ module.exports = {
           });
 
           let currQueries = db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {};
-          currQueries[interaction.id] = [embedRank, embedSales, embedTraits, Date.now()];
+          currQueries[interaction.id] = [Date.now(), embed, embedTraits, embedSales, embedRank];
           db.set(`${interaction.user.id}.assetquery`, currQueries);
 
           const message = await interaction.fetchReply();
@@ -274,30 +395,47 @@ module.exports = {
             if (!queries || !queries[interaction.id]) {
               return button.deferUpdate();
             }
-            let rankEmbed = queries[interaction.id][0];
             let salesEmbed = queries[interaction.id][1];
             let traitsEmbed = queries[interaction.id][2];
+            let historyEmbed = queries[interaction.id][3];
+            let rankEmbed = queries[interaction.id][4];
 
             if (button.customId == "asset_traits") {
-              const row = new MessageActionRow()
-                .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
-                .addComponents(new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("PRIMARY"));
+              const row = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY"),
+                new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("SECONDARY")
+              );
               await interaction.editReply({
                 embeds: [traitsEmbed],
                 components: [row],
               });
             } else if (button.customId == "asset_sales") {
-              const row = new MessageActionRow()
-                .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"))
-                .addComponents(new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("PRIMARY"));
+              const row = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+                new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY"),
+                new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("SECONDARY")
+              );
               await interaction.editReply({
                 embeds: [salesEmbed],
                 components: [row],
               });
+            } else if (button.customId == "asset_history") {
+              const row = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"),
+                new MessageButton().setCustomId("asset_rank").setLabel("Show Rank").setStyle("SECONDARY")
+              );
+              await interaction.editReply({
+                embeds: [historyEmbed],
+                components: [row],
+              });
             } else if (button.customId == "asset_rank") {
-              const row = new MessageActionRow()
-                .addComponents(new MessageButton().setCustomId("asset_sales").setLabel("Show Sales").setStyle("SUCCESS"))
-                .addComponents(new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"));
+              const row = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY"),
+                new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("SECONDARY")
+              );
               await interaction.editReply({
                 embeds: [rankEmbed],
                 components: [row],
