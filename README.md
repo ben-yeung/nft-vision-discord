@@ -53,8 +53,9 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 - [x] Setup a collection index queue to handle multiple index requests.
 - [x] NFT Rarity ranking with trait normalization.
 - [x] NFT Rarity ranking with trait count weighting.
-- [x] Implement Etherscan API tokenURI to fetch collection metadata rather than pinging OpenSea endpoint
-- [ ] Support for SOLANA OpenSea queries
+- [x] Implement Etherscan API tokenURI to fetch collection metadata rather than pinging OpenSea endpoint.
+- [x] Integrate LooksRare API to display listings, sales, bids within related commands.
+- [ ] Integrate X2Y2 API to display listings, sales, bids within related commands.
 - [ ] Support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk.
 - [ ] Wallet watching commands for when notable wallets buy/sell monitored collections.
 - [ ] Publish a web dApp to serve as an all-in-one NFT tool with above utilities.
