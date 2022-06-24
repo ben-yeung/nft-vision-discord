@@ -48,8 +48,11 @@ module.exports = {
         .setName("collection-slug")
         .setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.")
         .setRequired(true)
+    )
+    .addBooleanOption((option) =>
+      option.setName("show-outliers").setDescription("Whether or not to show outliers in chart. Defaults to False")
     ),
-  options: "[collection-slug]",
+  options: "[collection-slug] (show-outliers)",
   async execute(interaction, args, client) {
     if (
       db.get(`${interaction.user.id}.chartstarted`) &&
@@ -67,6 +70,9 @@ module.exports = {
     }
 
     let slug = interaction.options.getString("collection-slug");
+    const showOutliers = interaction.options.getBoolean("show-outliers")
+      ? interaction.options.getBoolean("show-outliers")
+      : false;
     var aliasFound = false;
 
     // Check if alias exists
@@ -121,9 +127,10 @@ module.exports = {
             let filteredChart = chartRes.chart[1];
             const attach2 = new MessageAttachment(filteredChart, "chart.jpg");
             let numPoints = chartRes.numPoints;
+            const finalAttach = showOutliers ? attach : attach2;
 
             let embed = new MessageEmbed()
-              .setTitle(`${name} Summary (Last ${numPoints} Sales)`)
+              .setTitle(`${name} (Last ${numPoints} Sales)`)
               .setDescription(desc)
               .setImage("attachment://chart.jpg")
               .setThumbnail(thumb)
@@ -138,7 +145,7 @@ module.exports = {
             return interaction.editReply({
               content: " ­",
               embeds: [embed],
-              files: [attach2],
+              files: [finalAttach],
             });
 
             let currQueries =
@@ -164,9 +171,18 @@ module.exports = {
               }
               let chart = queries[interaction.id][1];
               let filteredChart = queries[interaction.id][2];
-              const attach = new MessageAttachment(chart, "chart.jpg");
-              const attach2 = new MessageAttachment(filteredChart, "chart.jpg");
-              let embed = queries[interaction.id][3];
+              let attach = new MessageAttachment(chart, "chart2.jpg");
+              let attach2 = new MessageAttachment(filteredChart, "chart2.jpg");
+              let embed = new MessageEmbed()
+                .setTitle(`${name} (Last ${numPoints} Sales)`)
+                .setDescription(desc)
+                .setImage("attachment://chart2.jpg")
+                .setThumbnail(thumb)
+                .setFooter({ text: `x-axis is hours since sale • Slug: ${slug} ` })
+                .setTimestamp()
+                .setColor(44774);
+
+              console.log(attach);
 
               if (button.customId == "chart_showoutlier") {
                 const row = new MessageActionRow().addComponents(

@@ -60,7 +60,7 @@ exports.getChart = async (client, collection) => {
               // console.log(events[i]);
               let price = Number((events[i].total_price / Math.pow(10, 18)).toFixed(4));
               let date = new Date(events[i].event_timestamp);
-              let timeSince = Date.now() - date.getTime();
+              let timeSince = Math.abs(Date.now() - date.getTime());
               timeSince = timeSince / (3.6 * Math.pow(10, 6));
               dataPoints.push({ x: timeSince, y: price });
             }
@@ -76,6 +76,8 @@ exports.getChart = async (client, collection) => {
       } while (cursor && cursor != "" && dataPoints.length < 2500);
 
       var filteredDataPoints = [];
+      var oldestDate = Number.POSITIVE_INFINITY;
+      var oldestDateFiltered = Number.POSITIVE_INFINITY;
 
       // Calc mean, std dev, and z-score to factor out outliers
       var sum = 0;
@@ -92,7 +94,7 @@ exports.getChart = async (client, collection) => {
 
       for (var l = 0; l < dataPoints.length; l++) {
         let zScore = (dataPoints[l].y - mean) / std;
-        if (zScore < 3 && zScore > -3) {
+        if (zScore < 2 && zScore > -2) {
           filteredDataPoints.push(dataPoints[l]);
         }
       }
@@ -125,9 +127,8 @@ exports.getChart = async (client, collection) => {
         options: {
           scales: {
             x: {
-              ticks: {
-                reverse: true,
-              },
+              reverse: true,
+              max: Math.ceil(dataPoints[dataPoints.length - 1].x / 10) * 10,
             },
           },
         },
@@ -140,6 +141,7 @@ exports.getChart = async (client, collection) => {
           scales: {
             x: {
               reverse: true,
+              max: Math.ceil(filteredDataPoints[filteredDataPoints.length - 1].x / 10) * 10,
             },
           },
         },
@@ -150,53 +152,6 @@ exports.getChart = async (client, collection) => {
       const image2 = await canvas.renderToBuffer(filteredConfig);
 
       resolve({ status: 200, chart: [image, image2], numPoints: dataPoints.length });
-
-      //   request(
-      //     `https://api.opensea.io/api/v1/events?asset_contract_address=${collection_contract}&event_type=successful&limit=50`,
-      //     {
-      //       method: "GET",
-      //       headers: {
-      //         "X-API-KEY": botconfig.OS_API_KEY,
-      //       },
-      //     },
-      //     async function (error, response, body) {
-      //       if (!error && response.statusCode == 200) {
-      //         const parsed = JSON.parse(body);
-
-      //         console.log(parsed);
-
-      //         // Format for datapoints of a scatter chartjs is {x: val, y: val}
-      //         var dataPoints = [];
-
-      //         // for (var i = 0; i < parsed)
-
-      //         const data = {
-      //           datasets: [
-      //             {
-      //               label: "Sales (ETH)",
-      //               data: dataPoints,
-      //               backgroundColor: "rgba(32, 129, 226, 0.5)",
-      //               fill: false,
-      //             },
-      //           ],
-      //         };
-
-      //         const config = {
-      //           type: "scatter",
-      //           data: data,
-      //         };
-
-      //         const canvas = new ChartJSNodeCanvas({ width, height, backgroundColour: "white" });
-      //         const image = await canvas.renderToBuffer(config);
-      //         const attach = new MessageAttachment(image, "chart.jpg");
-
-      //         resolve({ status: 200, chart: attach, collection: collection_name });
-      //       } else {
-      //         console.log(error);
-      //         reject({ status: 404, reason: "Error while parsing events." });
-      //       }
-      //     }
-      //   );
     } catch (err) {
       console.log(err);
       reject({ status: 400, reason: "Error generating chart." });
