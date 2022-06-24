@@ -446,13 +446,16 @@ module.exports = {
         } catch (err) {
           console.log(err);
           return interaction.editReply({
-            content: `Error parsing asset. Please try again.`,
+            content: `Error parsing asset. Please try again in a moment.`,
             ephemeral: true,
           });
         }
       })
       .catch((res) => {
-        return interaction.reply({ content: res.reason, ephemeral: true });
+        return interaction.editReply({
+          content: `Error parsing asset. Please try again in a moment.`,
+          ephemeral: true,
+        });
       });
   },
 };

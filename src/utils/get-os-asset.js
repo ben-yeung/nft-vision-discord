@@ -12,10 +12,17 @@ const { collection } = require("../schemas/guild-schema");
  */
 
 exports.getOpenSeaAsset = async (client, collection_contract, token_id) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (!client.OS_KEY) return reject({ status: 404, reason: "No OS API Key found." });
     if (!collection_contract) return reject({ status: 404, reason: "No collection contract given." });
     if (!token_id) return reject({ status: 404, reason: "No token id given." });
+
+    client.OS_QUEUE_PRIO++;
+    while (client.OS_QUEUE >= 4) {
+      await client.delay(1500);
+    }
+    client.OS_QUEUE++;
+
     // Make OpenSea asset call. Requires API Key!
     sdk["retrieving-a-single-asset"]({
       "X-API-KEY": client.OS_KEY,
@@ -24,11 +31,6 @@ exports.getOpenSeaAsset = async (client, collection_contract, token_id) => {
       token_id: token_id,
     })
       .then(async (res) => {
-        client.OS_QUEUE_PRIO++;
-        while (client.OS_QUEUE >= 4) {
-          await client.delay(500);
-        }
-        client.OS_QUEUE++;
         // Get current listings for asset
         request(
           `https://api.opensea.io/api/v1/asset/${collection_contract}/${token_id}/listings`,
@@ -73,9 +75,20 @@ exports.getOpenSeaAsset = async (client, collection_contract, token_id) => {
                         if (!error && response.statusCode == 200) {
                           const salesJSON = JSON.parse(body);
                           let salesHistory = salesJSON.asset_events;
-                          salesHistory.sort((a, b) => (Number(a.total_price) * Number(a.payment_token.usd_price) < Number(b.total_price) * Number(b.payment_token.usd_price) ? 1 : -1));
+                          salesHistory.sort((a, b) =>
+                            Number(a.total_price) * Number(a.payment_token.usd_price) <
+                            Number(b.total_price) * Number(b.payment_token.usd_price)
+                              ? 1
+                              : -1
+                          );
 
-                          resolve({ status: 200, assetObject: res, listings: listingsJSON, offers: bids, sales: salesHistory }); // Complete payload
+                          resolve({
+                            status: 200,
+                            assetObject: res,
+                            listings: listingsJSON,
+                            offers: bids,
+                            sales: salesHistory,
+                          }); // Complete payload
                         } else {
                           console.log("error", error, response && response.statusCode);
                           resolve({ status: 200, assetObject: res, listings: listingsJSON, offers: bids, sales: [] });

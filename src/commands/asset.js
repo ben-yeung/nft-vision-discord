@@ -47,13 +47,28 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("asset")
     .setDescription("Get information of an asset.")
-    .addStringOption((option) => option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true))
-    .addStringOption((option) => option.setName("token-id").setDescription("NFT specific token id. Usually in name. Otherwise check txn for ID.").setRequired(true)),
+    .addStringOption((option) =>
+      option
+        .setName("collection-slug")
+        .setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.")
+        .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("token-id")
+        .setDescription("NFT specific token id. Usually in name. Otherwise check txn for ID.")
+        .setRequired(true)
+    ),
   options: "[collection-slug] [token-id]",
   async execute(interaction, args, client) {
-    if (db.get(`${interaction.user.id}.assetstarted`) && Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000) {
+    if (
+      db.get(`${interaction.user.id}.assetstarted`) &&
+      Date.now() - db.get(`${interaction.user.id}.assetstarted`) <= 10000
+    ) {
       return interaction.reply({
-        content: `Please wait ${ms(10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`)))} before starting another query!`,
+        content: `Please wait ${ms(
+          10000 - (Date.now() - db.get(`${interaction.user.id}.assetstarted`))
+        )} before starting another query!`,
         ephemeral: true,
       });
     } else {
@@ -87,69 +102,40 @@ module.exports = {
 
     await interaction.reply({ content: "Searching for asset...", embeds: [] });
 
-    sdk["retrieving-a-single-collection"]({ collection_slug: slug }).then(async (res) => {
-      let collection_asset = res.collection.primary_asset_contracts[0];
-      if (!collection_asset) return reject({ status: 400, reason: "Could not find collection contract. Assets not on Ethereum are currently not supported." });
-      const collection_contract = collection_asset.address;
+    sdk["retrieving-a-single-collection"]({ collection_slug: slug })
+      .then(async (res) => {
+        let collection_asset = res.collection.primary_asset_contracts[0];
+        if (!collection_asset)
+          return reject({
+            status: 400,
+            reason: "Could not find collection contract. Assets not on Ethereum are currently not supported.",
+          });
+        const collection_contract = collection_asset.address;
 
-      await getAsset(client, slug, token_id)
-        .then(async (res) => {
-          try {
-            const OSEmoji = client.emojis.cache.get("986139643399512105");
-            const LooksEmoji = client.emojis.cache.get("986139630845980713");
+        await getAsset(client, slug, token_id)
+          .then(async (res) => {
+            try {
+              const OSEmoji = client.emojis.cache.get("986139643399512105");
+              const LooksEmoji = client.emojis.cache.get("986139630845980713");
 
-            let asset = res.assetObject;
-            let image_url = asset.image_url;
-            let name = asset.name ? asset.name : `#${token_id}`;
+              let asset = res.assetObject;
+              let image_url = asset.image_url;
+              let name = asset.name ? asset.name : `#${token_id}`;
 
-            var owner_user = asset.owner.address.substring(2, 8).toUpperCase();
-            if (asset.owner.user) owner_user = asset.owner.user.username ? asset.owner.user.username : owner_user;
-            let owner = `[${owner_user}](https://opensea.io/${asset.owner.address})`;
+              var owner_user = asset.owner.address.substring(2, 8).toUpperCase();
+              if (asset.owner.user) owner_user = asset.owner.user.username ? asset.owner.user.username : owner_user;
+              let owner = `[${owner_user}](https://opensea.io/${asset.owner.address})`;
 
-            let allSales = res.sales;
+              let allSales = res.sales;
 
-            let num_sales = allSales.length;
-            const last_sale = res.last_sale;
-            var last_sale_date = last_sale.date;
-            var last_sale_formatted = "None";
-            if (last_sale != "None") {
-              let symbol = last_sale.symbol;
-              let usd = currency.format(last_sale.usd);
-              let marketplace = last_sale.name;
-
-              switch (marketplace) {
-                case "OpenSea":
-                  marketplace = OSEmoji;
-                  break;
-                case "LooksRare":
-                  marketplace = LooksEmoji;
-                  break;
-                default:
-                  marketplace = "";
-                  break;
-              }
-
-              switch (symbol) {
-                case "ETH":
-                  symbol = "Ξ";
-                  break;
-
-                default:
-                  break;
-              }
-
-              last_sale_formatted = `${marketplace} ${last_sale.price}${symbol} (${usd})`;
-            }
-
-            var salesHistory = "";
-            if (num_sales > 0) {
-              let datedSales = allSales.sort((a, b) => b.date - a.date);
-              for (var i = 0; i < num_sales; i++) {
-                let sale = datedSales[i];
-                let date = new Date(sale.date * 1000);
-                let symbol = sale.symbol;
-                let usd = currency.format(sale.usd);
-                let marketplace = sale.name;
+              let num_sales = allSales.length;
+              const last_sale = res.last_sale;
+              var last_sale_date = last_sale.date;
+              var last_sale_formatted = "None";
+              if (last_sale != "None") {
+                let symbol = last_sale.symbol;
+                let usd = currency.format(last_sale.usd);
+                let marketplace = last_sale.name;
 
                 switch (marketplace) {
                   case "OpenSea":
@@ -172,18 +158,115 @@ module.exports = {
                     break;
                 }
 
-                salesHistory += `${marketplace} \`${dateFormat.format(date)}\` • **${sale.price}${symbol}** *(${usd})* \n`;
+                last_sale_formatted = `${marketplace} ${last_sale.price}${symbol} (${usd})`;
               }
-            }
 
-            let listings = res.listings;
-            var curr_listings = "N/A";
-            if (listings && listings.length > 0) {
-              curr_listings = "";
+              var salesHistory = "";
+              if (num_sales > 0) {
+                let datedSales = allSales.sort((a, b) => b.date - a.date);
+                for (var i = 0; i < num_sales; i++) {
+                  let sale = datedSales[i];
+                  let date = new Date(sale.date * 1000);
+                  let symbol = sale.symbol;
+                  let usd = currency.format(sale.usd);
+                  let marketplace = sale.name;
 
-              for (var i = 0; i < listings.length; i++) {
-                let symbol = listings[i].symbol;
-                let marketplace = listings[i].name;
+                  switch (marketplace) {
+                    case "OpenSea":
+                      marketplace = OSEmoji;
+                      break;
+                    case "LooksRare":
+                      marketplace = LooksEmoji;
+                      break;
+                    default:
+                      marketplace = "";
+                      break;
+                  }
+
+                  switch (symbol) {
+                    case "ETH":
+                      symbol = "Ξ";
+                      break;
+
+                    default:
+                      break;
+                  }
+
+                  salesHistory += `${marketplace} \`${dateFormat.format(date)}\` • **${sale.price}${symbol}** *(${usd})* \n`;
+                }
+              }
+
+              let listings = res.listings;
+              var curr_listings = "N/A";
+              if (listings && listings.length > 0) {
+                curr_listings = "";
+
+                for (var i = 0; i < listings.length; i++) {
+                  let symbol = listings[i].symbol;
+                  let marketplace = listings[i].name;
+
+                  switch (marketplace) {
+                    case "OpenSea":
+                      marketplace = OSEmoji;
+                      break;
+                    case "LooksRare":
+                      marketplace = LooksEmoji;
+                      break;
+                    default:
+                      marketplace = "";
+                      break;
+                  }
+                  switch (symbol) {
+                    case "ETH":
+                      symbol = "Ξ";
+                      break;
+
+                    default:
+                      break;
+                  }
+                  let usd = currency.format(listings[i].usd);
+                  curr_listings += `${marketplace} ${listings[i].price}${symbol} (${usd}) \n`;
+                }
+              }
+
+              let bids = res.offers;
+              var highest_bid = "None";
+              if (bids && bids.length > 0) {
+                bids = bids.sort((a, b) => b.usd - a.usd);
+                let symbol = bids[0].symbol;
+                let marketplace = bids[0].name;
+
+                switch (marketplace) {
+                  case "OpenSea":
+                    marketplace = OSEmoji;
+                    break;
+                  case "LooksRare":
+                    marketplace = LooksEmoji;
+                    break;
+                  default:
+                    marketplace = "";
+                    break;
+                }
+
+                switch (symbol) {
+                  case "ETH":
+                    symbol = "Ξ";
+                    break;
+
+                  default:
+                    break;
+                }
+                let usd = currency.format(bids[0].usd);
+                let price = bids[0].price;
+                highest_bid = `${marketplace} ${price}${symbol} (${usd})`;
+              }
+
+              let sales = res.sales;
+              var highest_sale = "None";
+              if (sales && sales.length > 0) {
+                sales = sales.sort((a, b) => b.usd - a.usd);
+                let symbol = sales[0].symbol;
+                let marketplace = sales[0].name;
 
                 switch (marketplace) {
                   case "OpenSea":
@@ -204,195 +287,140 @@ module.exports = {
                   default:
                     break;
                 }
-                let usd = currency.format(listings[i].usd);
-                curr_listings += `${marketplace} ${listings[i].price}${symbol} (${usd}) \n`;
+                let usd = currency.format(sales[0].usd);
+                let price = sales[0].price;
+                highest_sale = `${marketplace} ${price}${symbol} (${usd})`;
               }
+
+              let traits = Object.keys(asset.traits).length > 0 ? asset.traits : "Unrevealed";
+              let OS_link = asset.permalink;
+              let collection = asset.asset_contract.name;
+              let collection_img = asset.asset_contract.image_url;
+              var traitDesc = await parseTraits(client, traits).catch((err) => console.log(err));
+
+              const row = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+                new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+              );
+
+              let embed = new Discord.MessageEmbed()
+                .setTitle(`${name} | ${collection}`)
+                .setURL(OS_link)
+                .setImage(image_url)
+                .addField(`Owned By`, owner)
+                .addField(`Listed For`, curr_listings)
+                .setThumbnail(collection_img)
+                .setFooter({
+                  text: `Slug: ${slug} • Token: ${token_id} • Total Sales: ${num_sales}`,
+                })
+                .setColor(44774);
+
+              if (highest_bid != "None") {
+                embed.addField(`Highest Bid`, highest_bid);
+              }
+
+              embed.addField(`Highest Sale`, highest_sale).addField(`Last Sale`, last_sale_formatted);
+
+              let embedTraits = new Discord.MessageEmbed()
+                .setTitle(`${name} | ${collection}`)
+                .setURL(OS_link)
+                .setDescription(traitDesc)
+                .setThumbnail(image_url)
+                .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
+                .setColor(44774);
+
+              let embedSales = new Discord.MessageEmbed()
+                .setTitle(`${name} | ${collection}`)
+                .setURL(OS_link)
+                .setThumbnail(image_url)
+                .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
+                .setColor(44774);
+
+              if (salesHistory != "") {
+                embedSales.setDescription(salesHistory);
+              } else {
+                embedSales.setDescription("No sales history found yet.");
+              }
+
+              await interaction.editReply({
+                content: " ­",
+                embeds: [embed],
+                components: [row],
+              });
+
+              let currQueries =
+                db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {};
+              currQueries[interaction.id] = [Date.now(), embed, embedTraits, embedSales];
+              db.set(`${interaction.user.id}.assetquery`, currQueries);
+
+              const message = await interaction.fetchReply();
+
+              const filter = (btn) => {
+                return btn.user.id === interaction.user.id && btn.message.id == message.id;
+              };
+
+              const collector = interaction.channel.createMessageComponentCollector({
+                filter,
+                time: 1000 * 90,
+              });
+
+              collector.on("collect", async (button) => {
+                let queries = db.get(`${interaction.user.id}.assetquery`);
+                if (!queries || !queries[interaction.id]) {
+                  return button.deferUpdate();
+                }
+                let salesEmbed = queries[interaction.id][1];
+                let traitsEmbed = queries[interaction.id][2];
+                let historyEmbed = queries[interaction.id][3];
+
+                if (button.customId == "asset_traits") {
+                  const row = new MessageActionRow().addComponents(
+                    new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                    new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+                  );
+                  await interaction.editReply({
+                    embeds: [traitsEmbed],
+                    components: [row],
+                  });
+                } else if (button.customId == "asset_sales") {
+                  const row = new MessageActionRow().addComponents(
+                    new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
+                    new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
+                  );
+                  await interaction.editReply({
+                    embeds: [salesEmbed],
+                    components: [row],
+                  });
+                } else if (button.customId == "asset_history") {
+                  const row = new MessageActionRow().addComponents(
+                    new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
+                    new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY")
+                  );
+                  await interaction.editReply({
+                    embeds: [historyEmbed],
+                    components: [row],
+                  });
+                }
+                button.deferUpdate();
+              });
+            } catch (err) {
+              console.log(err);
+              return interaction.editReply({
+                content: `Error parsing asset. Please try again in a moment.`,
+                ephemeral: true,
+              });
             }
-
-            let bids = res.offers;
-            var highest_bid = "None";
-            if (bids && bids.length > 0) {
-              bids = bids.sort((a, b) => b.usd - a.usd);
-              let symbol = bids[0].symbol;
-              let marketplace = bids[0].name;
-
-              switch (marketplace) {
-                case "OpenSea":
-                  marketplace = OSEmoji;
-                  break;
-                case "LooksRare":
-                  marketplace = LooksEmoji;
-                  break;
-                default:
-                  marketplace = "";
-                  break;
-              }
-
-              switch (symbol) {
-                case "ETH":
-                  symbol = "Ξ";
-                  break;
-
-                default:
-                  break;
-              }
-              let usd = currency.format(bids[0].usd);
-              let price = bids[0].price;
-              highest_bid = `${marketplace} ${price}${symbol} (${usd})`;
-            }
-
-            let sales = res.sales;
-            var highest_sale = "None";
-            if (sales && sales.length > 0) {
-              sales = sales.sort((a, b) => b.usd - a.usd);
-              let symbol = sales[0].symbol;
-              let marketplace = sales[0].name;
-
-              switch (marketplace) {
-                case "OpenSea":
-                  marketplace = OSEmoji;
-                  break;
-                case "LooksRare":
-                  marketplace = LooksEmoji;
-                  break;
-                default:
-                  marketplace = "";
-                  break;
-              }
-              switch (symbol) {
-                case "ETH":
-                  symbol = "Ξ";
-                  break;
-
-                default:
-                  break;
-              }
-              let usd = currency.format(sales[0].usd);
-              let price = sales[0].price;
-              highest_sale = `${marketplace} ${price}${symbol} (${usd})`;
-            }
-
-            let traits = Object.keys(asset.traits).length > 0 ? asset.traits : "Unrevealed";
-            let OS_link = asset.permalink;
-            let collection = asset.asset_contract.name;
-            let collection_img = asset.asset_contract.image_url;
-            var traitDesc = await parseTraits(client, traits).catch((err) => console.log(err));
-
-            const row = new MessageActionRow().addComponents(
-              new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
-              new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
-            );
-
-            let embed = new Discord.MessageEmbed()
-              .setTitle(`${name} | ${collection}`)
-              .setURL(OS_link)
-              .setImage(image_url)
-              .addField(`Owned By`, owner)
-              .addField(`Listed For`, curr_listings)
-              .setThumbnail(collection_img)
-              .setFooter({
-                text: `Slug: ${slug} • Token: ${token_id} • Total Sales: ${num_sales}`,
-              })
-              .setColor(44774);
-
-            if (highest_bid != "None") {
-              embed.addField(`Highest Bid`, highest_bid);
-            }
-
-            embed.addField(`Highest Sale`, highest_sale).addField(`Last Sale`, last_sale_formatted);
-
-            let embedTraits = new Discord.MessageEmbed()
-              .setTitle(`${name} | ${collection}`)
-              .setURL(OS_link)
-              .setDescription(traitDesc)
-              .setThumbnail(image_url)
-              .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
-              .setColor(44774);
-
-            let embedSales = new Discord.MessageEmbed()
-              .setTitle(`${name} | ${collection}`)
-              .setURL(OS_link)
-              .setThumbnail(image_url)
-              .setFooter({ text: `Slug: ${slug} • Token: ${token_id}` })
-              .setColor(44774);
-
-            if (salesHistory != "") {
-              embedSales.setDescription(salesHistory);
-            } else {
-              embedSales.setDescription("No sales history found yet.");
-            }
-
-            await interaction.editReply({
-              content: " ­",
-              embeds: [embed],
-              components: [row],
-            });
-
-            let currQueries = db.get(`${interaction.user.id}.assetquery`) != null ? db.get(`${interaction.user.id}.assetquery`) : {};
-            currQueries[interaction.id] = [Date.now(), embed, embedTraits, embedSales];
-            db.set(`${interaction.user.id}.assetquery`, currQueries);
-
-            const message = await interaction.fetchReply();
-
-            const filter = (btn) => {
-              return btn.user.id === interaction.user.id && btn.message.id == message.id;
-            };
-
-            const collector = interaction.channel.createMessageComponentCollector({
-              filter,
-              time: 1000 * 90,
-            });
-
-            collector.on("collect", async (button) => {
-              let queries = db.get(`${interaction.user.id}.assetquery`);
-              if (!queries || !queries[interaction.id]) {
-                return button.deferUpdate();
-              }
-              let salesEmbed = queries[interaction.id][1];
-              let traitsEmbed = queries[interaction.id][2];
-              let historyEmbed = queries[interaction.id][3];
-
-              if (button.customId == "asset_traits") {
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
-                  new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
-                );
-                await interaction.editReply({
-                  embeds: [traitsEmbed],
-                  components: [row],
-                });
-              } else if (button.customId == "asset_sales") {
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("SUCCESS"),
-                  new MessageButton().setCustomId("asset_history").setLabel("Sales History").setStyle("PRIMARY")
-                );
-                await interaction.editReply({
-                  embeds: [salesEmbed],
-                  components: [row],
-                });
-              } else if (button.customId == "asset_history") {
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId("asset_sales").setLabel("Show Stats").setStyle("SUCCESS"),
-                  new MessageButton().setCustomId("asset_traits").setLabel("Show Traits").setStyle("PRIMARY")
-                );
-                await interaction.editReply({
-                  embeds: [historyEmbed],
-                  components: [row],
-                });
-              }
-              button.deferUpdate();
-            });
-          } catch (err) {
+          })
+          .catch((err) => {
             console.log(err);
             return interaction.editReply({
-              content: `Error parsing asset. Please try again.`,
+              content: `Error parsing asset. Please try again in a moment.`,
               ephemeral: true,
             });
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    });
+          });
+      })
+      .catch((err) => {
+        return interaction.editReply({ content: "Error finding given collection. Please double check slug." });
+      });
   },
 };
