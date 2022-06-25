@@ -2,8 +2,6 @@
 
 # nft-vision-discord
 
-
-
 [![Discord.js](https://img.shields.io/badge/discord.js-v13-blue?style=for-the-badge&logo=discord)](https://www.npmjs.com/package/discord.js)
    [![npm](https://img.shields.io/badge/npm-v8.5.2-red?style=for-the-badge&logo=npm)](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
    [![Node.js](https://img.shields.io/badge/Node.js-v16.14.2-brightgreen?style=for-the-badge&logo=node.js)](https://nodejs.org/en/)
@@ -34,14 +32,12 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 - **/rank [collection-slug] [token-id]**
   - Retrieve a specific asset's rank.
   - View the NFT's rank with Trait Normalization and with Trait Count Weighting.
-- **/eth [amount]**
-  - Get current ETH to USD conversion with an option for custom amounts.
-  - CoinGecko API see the "Debugging" section for more details.
+- **/chart [collection-slug]**
+  - Retrieve a chart of the recent sales (Capped at 2500 sales).
+  - Returns an embed containing a chart, floor price summary, and rarity rank coloring if applicable.
 - **/summary**
   - View a comprehensive summary of the currently monitored collections.
   - The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
-- **/getlist**
-  - View the list of monitored collections as well as the current target prices set for each respective collection.
 - TBA ...
 
 ## 📸 Command Previews
@@ -59,6 +55,7 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 - [x] NFT Rarity ranking with trait count weighting.
 - [x] Implement Etherscan API tokenURI to fetch collection metadata rather than pinging OpenSea endpoint.
 - [x] Integrate LooksRare API to display listings, sales, bids within related commands.
+- [x] Add Sales History charting with Rank Rarity coloring if indexed.
 - [ ] Integrate X2Y2 API to display listings, sales, bids within related commands.
 - [ ] Support for transaction hashes/ids to pull an NFT's collection, purchase price (mint or secondary), and calculate the current risk.
 - [ ] Wallet watching commands for when notable wallets buy/sell monitored collections.
@@ -73,8 +70,9 @@ Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
 - Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
 - The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
 - ETH conversion is dependent on CoinGecko's API. See more here [CoinGecko Docs](https://www.coingecko.com/en/api/documentation)
-- Rank Rarity scoring is close/comparable to many other rarity sites such as RaritySniffer or NFTNerds.
+- Rank Rarity scoring is close/comparable to many other rarity sites such as RaritySniffer or NFTNerds by using normalized frequencies of traits. Trait count weighting is also considered as a separate rank.
 - For index-advanced.js I query Etherscan using web3.js on my own Geth light node. Provider options include great services such as Alchemy or Infura but due note that free plans for these providers will likely not be enough when indexing large collections frequently.
+- In addition you will also need an IPFS gateway to be able to parse the metadata if given an IPFS hash via the tokenURI call. This bot currently uses a private gateway but provider options include services such as Pinata.
 
 ## 🛠 Dependencies Include:
 
