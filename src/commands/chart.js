@@ -2,11 +2,13 @@ const Discord = require("discord.js");
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed, MessageActionRow, MessageButton, MessageAttachment } = require("discord.js");
 const guildSchema = require("../schemas/guild-schema");
+const metaSchema = require("../schemas/metadata-schema");
 const botconfig = require("../botconfig.json");
 const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 const db = require("quick.db");
 const ms = require("ms");
 const { getChart } = require("../utils/get-chart");
+const { getChartRanked } = require("../utils/get-chart-ranked");
 
 /*
     quick.db is used for command spam prevention
@@ -114,110 +116,167 @@ module.exports = {
         let website = res.collection.external_url;
         let twitterUser = res.collection.twitter_username;
         let openSea = "https://opensea.io/collection/" + res.collection.slug;
-        let desc = `[OpenSea](${openSea}) • [Etherscan](${contract})`;
+        let desc = ``;
 
+        let stats = res.collection.stats;
+        let currFloor = stats.floor_price ? Number(stats.floor_price.toFixed(4)) : 0;
+        let oneDayAvg = stats.one_day_average_price ? Number(stats.one_day_average_price.toFixed(4)) : 0;
+        let sevenDayAvg = stats.seven_day_average_price ? Number(stats.seven_day_average_price.toFixed(4)) : 0;
+        let thirtyDayAvg = stats.thirty_day_average_price ? Number(stats.thirty_day_average_price.toFixed(4)) : 0;
+
+        desc += `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")})
+         **24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayAvg).toLocaleString("en-US")})
+         **7d Floor Avg:** ${sevenDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(sevenDayAvg)
+          .toLocaleString("en-US")})
+         **30d Floor Avg:** ${thirtyDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(thirtyDayAvg)
+          .toLocaleString("en-US")}) 
+        \n`;
+
+        desc += `[OpenSea](${openSea}) • [Etherscan](${contract})`;
         if (discordURL) desc += ` • [Discord](${discordURL})`;
         if (website) desc += ` • [Website](${website})`;
         if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
 
-        getChart(client, res.collection) // see utils/get-chart
-          .then(async (chartRes) => {
-            let chart = chartRes.chart[0];
-            const attach = new MessageAttachment(chart, "chart.jpg");
-            let filteredChart = chartRes.chart[1];
-            const attach2 = new MessageAttachment(filteredChart, "chart.jpg");
-            let numPoints = chartRes.numPoints;
-            const finalAttach = showOutliers ? attach : attach2;
+        // Check if collection is indexed / ranked
+        // If it is then we return a chart with rank color indicators
+        // Else we return a normal chart
+        var rankOBJ = await metaSchema.findOne({ slug: slug });
+        var chartRes = null;
+        console.log("here 1");
 
-            let embed = new MessageEmbed()
-              .setTitle(`${name} (Last ${numPoints} Sales)`)
-              .setDescription(desc)
-              .setImage("attachment://chart.jpg")
-              .setThumbnail(thumb)
-              .setFooter({ text: `x-axis is hours since sale • Slug: ${slug} ` })
-              .setTimestamp()
-              .setColor(44774);
-
-            const row = new MessageActionRow().addComponents(
-              new MessageButton().setCustomId("chart_showoutlier").setLabel("Show Outliers").setStyle("SUCCESS")
-            );
-
-            return interaction.editReply({
-              content: " ­",
-              embeds: [embed],
-              files: [finalAttach],
+        if (!rankOBJ) {
+          await getChart(client, res.collection) // see utils/get-chart
+            .then(async (res) => {
+              chartRes = res;
+            })
+            .catch((err) => {
+              console.log(err);
+              return interaction.editReply({
+                content: "Error generating chart.",
+                embeds: [],
+              });
             });
-
-            let currQueries =
-              db.get(`${interaction.user.id}.chartquery`) != null ? db.get(`${interaction.user.id}.chartquery`) : {};
-            currQueries[interaction.id] = [Date.now(), chart, filteredChart, embed];
-            db.set(`${interaction.user.id}.chartquery`, currQueries);
-
-            const message = await interaction.fetchReply();
-
-            const filter = (btn) => {
-              return btn.user.id === interaction.user.id && btn.message.id == message.id;
-            };
-
-            const collector = interaction.channel.createMessageComponentCollector({
-              filter,
-              time: 1000 * 90,
+        } else {
+          await getChartRanked(client, res.collection, rankOBJ)
+            .then(async (res) => {
+              chartRes = res;
+            })
+            .catch((err) => {
+              console.log(err);
+              return interaction.editReply({
+                content: "Error generating chart.",
+                embeds: [],
+              });
             });
+        }
 
-            collector.on("collect", async (button) => {
-              let queries = db.get(`${interaction.user.id}.chartquery`);
-              if (!queries || !queries[interaction.id]) {
-                return button.deferUpdate();
-              }
-              let chart = queries[interaction.id][1];
-              let filteredChart = queries[interaction.id][2];
-              let attach = new MessageAttachment(chart, "chart2.jpg");
-              let attach2 = new MessageAttachment(filteredChart, "chart2.jpg");
-              let embed = new MessageEmbed()
-                .setTitle(`${name} (Last ${numPoints} Sales)`)
-                .setDescription(desc)
-                .setImage("attachment://chart2.jpg")
-                .setThumbnail(thumb)
-                .setFooter({ text: `x-axis is hours since sale • Slug: ${slug} ` })
-                .setTimestamp()
-                .setColor(44774);
+        let chart = chartRes.chart[0];
+        const attach = new MessageAttachment(chart, "chart.jpg");
+        let filteredChart = chartRes.chart[1];
+        const attach2 = new MessageAttachment(filteredChart, "chart.jpg");
+        let numPoints = chartRes.numPoints;
+        const finalAttach = showOutliers ? attach : attach2;
 
-              console.log(attach);
+        let embed = new MessageEmbed()
+          .setTitle(`${name} (Last ${numPoints} Sales)`)
+          .setDescription(desc)
+          .setImage("attachment://chart.jpg")
+          .setThumbnail(thumb)
+          .setFooter({ text: `x-axis is hours since sale • Slug: ${slug} ` })
+          .setTimestamp()
+          .setColor(44774);
 
-              if (button.customId == "chart_showoutlier") {
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId("chart_hideoutlier").setLabel("Hide Outliers").setStyle("DANGER")
-                );
-                await interaction.editReply({
-                  embeds: [embed],
-                  files: [attach],
-                  components: [row],
-                });
-              } else if (button.customId == "chart_hideoutlier") {
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId("chart_showoutlier").setLabel("Show Outliers").setStyle("SUCCESS")
-                );
-                await interaction.editReply({
-                  embeds: [embed],
-                  files: [attach2],
-                  components: [row],
-                });
-              }
-              button.deferUpdate();
-            });
-          })
-          .catch((err) => {
-            console.log(err);
-            return interaction.editReply({
-              content: "Error generating chart.",
-              embeds: [],
-            });
-          });
+        const row = new MessageActionRow().addComponents(
+          new MessageButton().setCustomId("chart_showoutlier").setLabel("Show Outliers").setStyle("SUCCESS")
+        );
+
+        return interaction.editReply({
+          content: " ­",
+          embeds: [embed],
+          files: [finalAttach],
+        });
       })
       .catch((err) => {
         return interaction.editReply({
-          content: err.reason,
+          content: "Error while searching for collection slug. Using an alias? Check valid aliases with /listalias",
         });
       });
+
+    // Some issues with how Discord Attachments are handled and trying to editReply after button press
+    // For now Showing Outliers is a command option rather than a button on embed
+
+    //       let currQueries =
+    //         db.get(`${interaction.user.id}.chartquery`) != null ? db.get(`${interaction.user.id}.chartquery`) : {};
+    //       currQueries[interaction.id] = [Date.now(), chart, filteredChart, embed];
+    //       db.set(`${interaction.user.id}.chartquery`, currQueries);
+
+    //       const message = await interaction.fetchReply();
+
+    //       const filter = (btn) => {
+    //         return btn.user.id === interaction.user.id && btn.message.id == message.id;
+    //       };
+
+    //       const collector = interaction.channel.createMessageComponentCollector({
+    //         filter,
+    //         time: 1000 * 90,
+    //       });
+
+    //       collector.on("collect", async (button) => {
+    //         let queries = db.get(`${interaction.user.id}.chartquery`);
+    //         if (!queries || !queries[interaction.id]) {
+    //           return button.deferUpdate();
+    //         }
+    //         let chart = queries[interaction.id][1];
+    //         let filteredChart = queries[interaction.id][2];
+    //         let attach = new MessageAttachment(chart, "chart2.jpg");
+    //         let attach2 = new MessageAttachment(filteredChart, "chart2.jpg");
+    //         let embed = new MessageEmbed()
+    //           .setTitle(`${name} (Last ${numPoints} Sales)`)
+    //           .setDescription(desc)
+    //           .setImage("attachment://chart2.jpg")
+    //           .setThumbnail(thumb)
+    //           .setFooter({ text: `x-axis is hours since sale • Slug: ${slug} ` })
+    //           .setTimestamp()
+    //           .setColor(44774);
+
+    //         console.log(attach);
+
+    //         if (button.customId == "chart_showoutlier") {
+    //           const row = new MessageActionRow().addComponents(
+    //             new MessageButton().setCustomId("chart_hideoutlier").setLabel("Hide Outliers").setStyle("DANGER")
+    //           );
+    //           await interaction.editReply({
+    //             embeds: [embed],
+    //             files: [attach],
+    //             components: [row],
+    //           });
+    //         } else if (button.customId == "chart_hideoutlier") {
+    //           const row = new MessageActionRow().addComponents(
+    //             new MessageButton().setCustomId("chart_showoutlier").setLabel("Show Outliers").setStyle("SUCCESS")
+    //           );
+    //           await interaction.editReply({
+    //             embeds: [embed],
+    //             files: [attach2],
+    //             components: [row],
+    //           });
+    //         }
+    //         button.deferUpdate();
+    //       });
+    //     })
+    //     .catch((err) => {
+    //       console.log(err);
+    //       return interaction.editReply({
+    //         content: "Error generating chart.",
+    //         embeds: [],
+    //       });
+    //     });
+    // })
+    // .catch((err) => {
+    //   return interaction.editReply({
+    //     content: err.reason,
+    //   });
+    // });
   },
 };
