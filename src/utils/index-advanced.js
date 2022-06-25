@@ -28,7 +28,8 @@ function delay(ms) {
 
 exports.indexAdvanced = async (client, collection_slug) => {
   return new Promise((resolve, reject) => {
-    if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1) return reject("Collection is already queued for indexing. Please check back in a moment.");
+    if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1)
+      return reject("Collection is already queued for indexing. Please check back in a moment.");
 
     const mutex = new Mutex(); // Used to synchronize metadata parsing since we are using async.eachLimit
     sdk["retrieving-a-single-collection"]({ collection_slug: collection_slug })
@@ -42,7 +43,11 @@ exports.indexAdvanced = async (client, collection_slug) => {
             status: 400,
             reason: "Error finding collection contract.",
           });
-        const endpoint = "https://api.etherscan.io/api?module=contract&action=getabi&address=" + collection_contract + "&apikey=" + ether_key;
+        const endpoint =
+          "https://api.etherscan.io/api?module=contract&action=getabi&address=" +
+          collection_contract +
+          "&apikey=" +
+          ether_key;
         request(endpoint, async function (error, response, body) {
           try {
             var json = JSON.parse(body);
@@ -63,7 +68,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
 
             async.eachLimit(
               token_ids,
-              100,
+              50,
               async function (token_id, callback) {
                 await contract.methods["tokenURI"](token_id)
                   .call()
@@ -98,7 +103,9 @@ exports.indexAdvanced = async (client, collection_slug) => {
                         categories[category]["count"] = 0;
                         categories[category]["traits"] = {};
                       }
-                      categories[category]["traits"][value] = categories[category]["traits"][value] ? categories[category]["traits"][value] + 1 : 1;
+                      categories[category]["traits"][value] = categories[category]["traits"][value]
+                        ? categories[category]["traits"][value] + 1
+                        : 1;
                       categories[category]["count"] += 1;
                       release();
                     }
@@ -146,7 +153,9 @@ exports.indexAdvanced = async (client, collection_slug) => {
                           categories[category]["count"] = 0;
                           categories[category]["traits"] = {};
                         }
-                        categories[category]["traits"][value] = categories[category]["traits"][value] ? categories[category]["traits"][value] + 1 : 1;
+                        categories[category]["traits"][value] = categories[category]["traits"][value]
+                          ? categories[category]["traits"][value] + 1
+                          : 1;
                         categories[category]["count"] += 1;
                         release();
                       }
@@ -187,7 +196,8 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     let cat = categories[cats[i]];
                     trait_rarity[cats[i]] = {};
                     let traits = cat["traits"];
-                    const trait_total = totalSupply - cat["count"] >= 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length;
+                    const trait_total =
+                      totalSupply - cat["count"] >= 1 ? Object.keys(traits).length + 1 : Object.keys(traits).length;
                     Object.keys(traits).forEach((t) => {
                       let freq = traits[t] / totalSupply;
                       let rarity = 1 / freq;
@@ -263,12 +273,16 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     }
                   }
 
-                  if (allTokensArr.length == 0) return reject("Error parsing collection's traits (Metadata may not be fully published yet). Please try again later");
+                  if (allTokensArr.length == 0)
+                    return reject(
+                      "Error parsing collection's traits (Metadata may not be fully published yet). Please try again later"
+                    );
 
                   // Account for trait count weights and construct rankings
                   try {
                     var trait_count_rarities = {};
-                    const trait_count_avg = (sumTraits + Object.keys(num_traits_freq).length) / (Object.keys(categories).length + 1);
+                    const trait_count_avg =
+                      (sumTraits + Object.keys(num_traits_freq).length) / (Object.keys(categories).length + 1);
 
                     const trait_counts = Object.keys(num_traits_freq);
                     for (var i = 0; i < trait_counts.length; i++) {
@@ -288,7 +302,10 @@ exports.indexAdvanced = async (client, collection_slug) => {
 
                       // We make a deep copy of allTokensArr for allTokensTraitCount to separate sorting
                       // However we combine the rankings into a single ranking object so we want to keep trait_map updated for point purposes
-                      allTokensArr[j].trait_map["OtherList"][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [trait_score, trait_total];
+                      allTokensArr[j].trait_map["OtherList"][`**Trait Count:** ${allTokensArr[j].trait_count}`] = [
+                        trait_score,
+                        trait_total,
+                      ];
                     }
 
                     allTokensArr.sort((a, b) => {

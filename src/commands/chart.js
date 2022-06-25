@@ -144,7 +144,6 @@ module.exports = {
         // Else we return a normal chart
         var rankOBJ = await metaSchema.findOne({ slug: slug });
         var chartRes = null;
-        console.log("here 1");
 
         if (!rankOBJ) {
           await getChart(client, res.collection) // see utils/get-chart
