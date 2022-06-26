@@ -62,7 +62,7 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
               let price = Number((events[i].total_price / Math.pow(10, 18)).toFixed(4));
               let token_id = events[i].asset.token_id;
               let date = new Date(events[i].event_timestamp);
-              let timeSince = Math.abs(Date.now() - date.getTime());
+              let timeSince = Date.now() + date.getTimezoneOffset() * 60000 - date.getTime();
               timeSince = timeSince / (3.6 * Math.pow(10, 6));
               dataPoints.push({ x: timeSince, y: price, token_id: token_id });
             }
@@ -223,6 +223,9 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
         ],
       };
 
+      let scale = Math.floor(dataPoints[dataPoints.length - 1].x * 1.05);
+      let f_scale = Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05);
+
       const config = {
         type: "scatter",
         data: data,
@@ -230,7 +233,7 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
           scales: {
             x: {
               reverse: true,
-              max: Math.ceil(dataPoints[dataPoints.length - 1].x / 10) * 10,
+              max: scale,
             },
           },
         },
@@ -243,7 +246,7 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
           scales: {
             x: {
               reverse: true,
-              max: Math.ceil(filteredDataPoints[filteredDataPoints.length - 1].x / 10) * 10,
+              max: f_scale,
             },
           },
         },

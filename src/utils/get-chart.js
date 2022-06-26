@@ -60,7 +60,7 @@ exports.getChart = async (client, collection) => {
               // console.log(events[i]);
               let price = Number((events[i].total_price / Math.pow(10, 18)).toFixed(4));
               let date = new Date(events[i].event_timestamp);
-              let timeSince = Math.abs(Date.now() - date.getTime());
+              let timeSince = Date.now() + date.getTimezoneOffset() * 60000 - date.getTime();
               timeSince = timeSince / (3.6 * Math.pow(10, 6));
               dataPoints.push({ x: timeSince, y: price });
             }
@@ -119,6 +119,9 @@ exports.getChart = async (client, collection) => {
         ],
       };
 
+      let scale = Math.floor(dataPoints[dataPoints.length - 1].x * 1.05);
+      let f_scale = Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05);
+
       const config = {
         type: "scatter",
         data: data,
@@ -126,7 +129,7 @@ exports.getChart = async (client, collection) => {
           scales: {
             x: {
               reverse: true,
-              max: Math.ceil(dataPoints[dataPoints.length - 1].x / 10) * 10,
+              max: scale,
             },
           },
         },
@@ -139,7 +142,7 @@ exports.getChart = async (client, collection) => {
           scales: {
             x: {
               reverse: true,
-              max: Math.ceil(filteredDataPoints[filteredDataPoints.length - 1].x / 10) * 10,
+              max: f_scale,
             },
           },
         },
