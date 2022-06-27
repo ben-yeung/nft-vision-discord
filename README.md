@@ -41,8 +41,18 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
 - TBA ...
 
 ## 📸 Command Previews
+### [Link to Full Album](https://imgur.com/a/ZXg0FPc)
+Asset Overview             |  Sales History Charting
+:-------------------------:|:-------------------------:
+![iM52QFu](https://user-images.githubusercontent.com/51476377/176044074-d3a7f166-87dd-498a-b64c-bb31ce6f06ba.png)  |  ![Mmhf0pT](https://user-images.githubusercontent.com/51476377/176044109-69156b1d-2a31-4635-a1f9-c4a5b4bd9a42.png)
 
-Previews are stored on imgur. [Visit imgur](https://imgur.com/a/ZXg0FPc)
+Derisk Utility             |  Floor Price Monitoring
+:-------------------------:|:-------------------------:
+![IwL4BRq](https://user-images.githubusercontent.com/51476377/176044170-5e6c63b8-c601-4122-b319-83f96b6a4a0b.png)  |  ![x3LZvsV](https://user-images.githubusercontent.com/51476377/176044225-44ee52a6-bda7-4ae9-b048-492db7b7d1d0.png)
+
+Rarity Rankings             |  Trait Score Distributions
+:-------------------------:|:-------------------------:
+![Screenshot 2022-06-27 150712](https://user-images.githubusercontent.com/51476377/176044260-7d29e213-d1c3-4171-a051-a79eb7a061f4.png) |  ![Screenshot 2022-06-27 150726](https://user-images.githubusercontent.com/51476377/176044275-968e513b-f3e8-46cb-a420-ca251e1be882.png)
 
 ## 📅 Future Updates / Roadmap Ahead
 
