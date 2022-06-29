@@ -115,41 +115,45 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
       var f_top1 = []; // red
 
       for (var m = 0; m < dataPoints.length; m++) {
-        let token_id = dataPoints[m].token_id;
-        let f_token_id = m < filteredDataPoints.length ? filteredDataPoints[m].token_id : null;
+        try {
+          let token_id = dataPoints[m].token_id;
+          let f_token_id = m < filteredDataPoints.length ? filteredDataPoints[m].token_id : null;
 
-        let rank = rankOBJ.ranks[token_id].rank_norm;
-        let f_rank = f_token_id != null ? rankOBJ.ranks[f_token_id].rank_norm : null;
+          let rank = rankOBJ.ranks[token_id].rank_norm;
+          let f_rank = f_token_id != null ? rankOBJ.ranks[f_token_id].rank_norm : null;
 
-        let percentile = Number(rank) / total_supply;
-        let f_percentile = f_rank ? Number(f_rank) / total_supply : null;
+          let percentile = Number(rank) / total_supply;
+          let f_percentile = f_rank ? Number(f_rank) / total_supply : null;
 
-        let dataPoint = { x: dataPoints[m].x, y: dataPoints[m].y };
-        let f_dataPoint = f_percentile ? { x: filteredDataPoints[m].x, y: filteredDataPoints[m].y } : null;
-        if (percentile <= 0.01) {
-          top1.push();
-        } else if (percentile <= 0.04) {
-          top4.push(dataPoint);
-        } else if (percentile <= 0.1) {
-          top10.push(dataPoint);
-        } else if (percentile <= 0.25) {
-          top25.push(dataPoint);
-        } else {
-          top65.push(dataPoint);
-        }
-
-        if (f_percentile) {
-          if (f_percentile <= 0.01) {
-            f_top1.push(f_dataPoint);
-          } else if (f_percentile <= 0.04) {
-            f_top4.push(f_dataPoint);
-          } else if (f_percentile <= 0.1) {
-            f_top10.push(f_dataPoint);
-          } else if (f_percentile <= 0.25) {
-            f_top25.push(f_dataPoint);
+          let dataPoint = { x: dataPoints[m].x, y: dataPoints[m].y };
+          let f_dataPoint = f_percentile ? { x: filteredDataPoints[m].x, y: filteredDataPoints[m].y } : null;
+          if (percentile <= 0.01) {
+            top1.push();
+          } else if (percentile <= 0.04) {
+            top4.push(dataPoint);
+          } else if (percentile <= 0.1) {
+            top10.push(dataPoint);
+          } else if (percentile <= 0.25) {
+            top25.push(dataPoint);
           } else {
-            f_top65.push(f_dataPoint);
+            top65.push(dataPoint);
           }
+
+          if (f_percentile) {
+            if (f_percentile <= 0.01) {
+              f_top1.push(f_dataPoint);
+            } else if (f_percentile <= 0.04) {
+              f_top4.push(f_dataPoint);
+            } else if (f_percentile <= 0.1) {
+              f_top10.push(f_dataPoint);
+            } else if (f_percentile <= 0.25) {
+              f_top25.push(f_dataPoint);
+            } else {
+              f_top65.push(f_dataPoint);
+            }
+          }
+        } catch (err) {
+          console.log(err);
         }
       }
 
@@ -223,8 +227,15 @@ exports.getChartRanked = async (client, collection, rankOBJ) => {
         ],
       };
 
-      let scale = Math.floor(dataPoints[dataPoints.length - 1].x * 1.05);
-      let f_scale = Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05);
+      let scale =
+        dataPoints[dataPoints.length - 1].x < 100
+          ? Math.floor(dataPoints[dataPoints.length - 1].x * 1.05)
+          : Math.ceil(dataPoints[dataPoints.length - 1].x / 10) * 10;
+
+      let f_scale =
+        filteredDataPoints[filteredDataPoints.length - 1].x < 100
+          ? Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05)
+          : Math.ceil(filteredDataPoints[filteredDataPoints.length - 1].x / 10) * 10;
 
       const config = {
         type: "scatter",

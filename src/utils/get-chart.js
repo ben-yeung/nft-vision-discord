@@ -119,8 +119,15 @@ exports.getChart = async (client, collection) => {
         ],
       };
 
-      let scale = Math.floor(dataPoints[dataPoints.length - 1].x * 1.05);
-      let f_scale = Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05);
+      let scale =
+        dataPoints[dataPoints.length - 1].x < 100
+          ? Math.floor(dataPoints[dataPoints.length - 1].x * 1.05)
+          : Math.ceil(dataPoints[dataPoints.length - 1].x / 10) * 10;
+
+      let f_scale =
+        filteredDataPoints[filteredDataPoints.length - 1].x < 100
+          ? Math.floor(filteredDataPoints[filteredDataPoints.length - 1].x * 1.05)
+          : Math.ceil(filteredDataPoints[filteredDataPoints.length - 1].x / 10) * 10;
 
       const config = {
         type: "scatter",

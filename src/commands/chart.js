@@ -198,6 +198,7 @@ module.exports = {
         });
       })
       .catch((err) => {
+        db.delete(`${interaction.user.id}.chartstarted`);
         return interaction.editReply({
           content: "Error while searching for collection slug. Using an alias? Check valid aliases with /listalias",
         });
