@@ -9,7 +9,7 @@ var Mutex = require("async-mutex").Mutex;
 
 var Web3 = require("web3");
 const { default: axios } = require("axios");
-var web3 = new Web3(new Web3.providers.HttpProvider(botconfig.LIGHT_NODE)); // insert provider http here
+var web3 = new Web3(new Web3.providers.HttpProvider(botconfig.INFURA_PROVIDER)); // insert provider http here
 const ether_key = botconfig.ETHERSCAN_API_KEY;
 
 /**
@@ -80,7 +80,6 @@ exports.indexAdvanced = async (client, collection_slug) => {
                 // This implementation uses a private ipfs gateway to facilitate ipfs calls
                 if (tokenURI.substr(0, 7) == "ipfs://") {
                   var ind = tokenURI.length;
-                  console.log(tokenURI);
                   for (var i = tokenURI.length - 1; i > 0; i--) {
                     if (tokenURI[i] == "/") {
                       ind = i;
@@ -102,12 +101,13 @@ exports.indexAdvanced = async (client, collection_slug) => {
                   }
                   base = tokenURI.substring(0, ind);
                 }
+                console.log(tokenURI);
               });
             console.log(base);
 
             async.eachLimit(
               token_ids,
-              50,
+              100,
               async function (token_id, callback) {
                 try {
                   // Check if uri is of form ipfs:// + ipfs hash
@@ -116,7 +116,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                   // This implementation uses a private ipfs gateway to facilitate ipfs calls
                   var data;
                   if (is_ipfs) {
-                    const res = await axios.get(`${botconfig.IPFS_GATEWAY}${base}/${token_id}`);
+                    const res = await axios.get(`${botconfig.INFURA_IPFS}${base}/${token_id}`);
                     data = res.data;
                   } else {
                     let res = await axios.get(`${base}/${token_id}`);
@@ -162,7 +162,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
                   try {
                     var data;
                     if (is_ipfs) {
-                      const res = await axios.get(`${botconfig.IPFS_GATEWAY}${base}/${token_id}`);
+                      const res = await axios.get(`${botconfig.INFURA_IPFS}${base}/${token_id}`);
                       data = res.data;
                     } else {
                       let res = await axios.get(`${base}/${token_id}`);
@@ -192,10 +192,11 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     }
                     tokens[token_id] = traits;
                   } catch (err) {
-                    console.log(err);
+                    // console.log(err);
                     // Retry one more time
                     // Else just skip for now (Prevent deadlock)
                     if (!stuck.includes(token_id)) {
+                      console.log(`[${collection_slug}]: Retrying token ${token_id}`);
                       leftover.unshift(token_id);
                       stuck.push(token_id);
                     }
