@@ -66,25 +66,106 @@ exports.indexAdvanced = async (client, collection_slug) => {
             client.OS_INDEX_QUEUE.push(collection_slug);
             console.log(`Beginning to index ${collection_slug}`);
 
+            var base = "";
+            var is_ipfs = false;
+
+            // Call tokenURI to extract the IPFS hash or the baseURI
+            // We do this to avoid having to call the tokenURI function for each and every token_id
+            await contract.methods["tokenURI"](1)
+              .call()
+              .then(async (tokenURI) => {
+                // Check if uri is of form ipfs:// + ipfs hash
+                // If so we need a gateway to be able to fetch the metadata stored at the ipfs hash
+                // Using a public ipfs gateway can become rate limited given we are running async.eachLimit
+                // This implementation uses a private ipfs gateway to facilitate ipfs calls
+                if (tokenURI.substr(0, 7) == "ipfs://") {
+                  var ind = tokenURI.length;
+                  console.log(tokenURI);
+                  for (var i = tokenURI.length - 1; i > 0; i--) {
+                    if (tokenURI[i] == "/") {
+                      ind = i;
+                      break;
+                    }
+                  }
+                  base = tokenURI.substring(0, ind);
+                  base = base.replace("ipfs://", "");
+                  is_ipfs = true;
+                } else {
+                  // Get baseURI by finding first instance of / from right to left
+                  // i.e. remove the token id appended to be used later generically
+                  var ind = tokenURI.length;
+                  for (var i = tokenURI.length - 1; i > 0; i--) {
+                    if (tokenURI[i] == "/") {
+                      ind = i;
+                      break;
+                    }
+                  }
+                  base = tokenURI.substring(0, ind);
+                }
+              });
+            console.log(base);
+
             async.eachLimit(
               token_ids,
               50,
               async function (token_id, callback) {
-                await contract.methods["tokenURI"](token_id)
-                  .call()
-                  .then(async (tokenURI) => {
-                    // Check if uri is of form ipfs:// + ipfs hash
-                    // If so we need a gateway to be able to fetch the metadata stored at the ipfs hash
-                    // Using a public ipfs gateway can become rate limited given we are running async.eachLimit
-                    // Pintata Cloud provides private gateways via premium plans
-                    // This implementation uses a private ipfs gateway to facilitate ipfs calls
+                try {
+                  // Check if uri is of form ipfs:// + ipfs hash
+                  // If so we need a gateway to be able to fetch the metadata stored at the ipfs hash
+                  // Using a public ipfs gateway can become rate limited given we are running async.eachLimit
+                  // This implementation uses a private ipfs gateway to facilitate ipfs calls
+                  var data;
+                  if (is_ipfs) {
+                    const res = await axios.get(`${botconfig.IPFS_GATEWAY}${base}/${token_id}`);
+                    data = res.data;
+                  } else {
+                    let res = await axios.get(`${base}/${token_id}`);
+                    data = res.data;
+                  }
+
+                  var traits = [];
+                  for (var i = 0; i < data.attributes.length; i++) {
+                    let category = data.attributes[i].trait_type;
+                    let value = data.attributes[i].value;
+                    let payload = {
+                      trait_type: category,
+                      value: value,
+                    };
+                    traits.push(payload);
+                    const release = await mutex.acquire();
+                    if (!categories[category]) {
+                      categories[category] = {};
+                      categories[category]["count"] = 0;
+                      categories[category]["traits"] = {};
+                    }
+                    categories[category]["traits"][value] = categories[category]["traits"][value]
+                      ? categories[category]["traits"][value] + 1
+                      : 1;
+                    categories[category]["count"] += 1;
+                    release();
+                  }
+                  tokens[token_id] = traits;
+                  if (token_id % 50 == 0) {
+                    console.log(`[${collection_slug}]: ${token_id}`);
+                  }
+                } catch (err) {
+                  // console.log(err);
+                  leftover.push(token_id);
+                }
+              },
+              async function () {
+                var stuck = [];
+                // Catch any leftovers
+                console.log(`[${collection_slug}]: Cleaning up leftovers (${leftover.length})`);
+                while (leftover.length > 0) {
+                  var token_id = leftover.pop();
+                  try {
                     var data;
-                    if (tokenURI.substr(0, 7) == "ipfs://") {
-                      tokenURI = await tokenURI.replace("ipfs://", "");
-                      const res = await axios.get(`${botconfig.IPFS_GATEWAY}${tokenURI}`);
+                    if (is_ipfs) {
+                      const res = await axios.get(`${botconfig.IPFS_GATEWAY}${base}/${token_id}`);
                       data = res.data;
                     } else {
-                      let res = await axios.get(tokenURI);
+                      let res = await axios.get(`${base}/${token_id}`);
                       data = res.data;
                     }
 
@@ -110,66 +191,15 @@ exports.indexAdvanced = async (client, collection_slug) => {
                       release();
                     }
                     tokens[token_id] = traits;
-                    if (token_id % 50 == 0) {
-                      console.log(`[${collection_slug}]: ${token_id}`);
-                    }
-                  })
-                  .catch((err) => {
+                  } catch (err) {
                     console.log(err);
-                    leftover.push(token_id);
-                  });
-              },
-              async function () {
-                var stuck = [];
-                // Catch any leftovers
-                console.log(`[${collection_slug}]: Cleaning up leftovers (${leftover.length})`);
-                while (leftover.length > 0) {
-                  var token_id = leftover.pop();
-                  await contract.methods["tokenURI"](token_id)
-                    .call()
-                    .then(async (tokenURI) => {
-                      var data;
-                      if (tokenURI.substr(0, 7) == "ipfs://") {
-                        tokenURI = await tokenURI.replace("ipfs://", "");
-                        const res = await axios.get(`${botconfig.IPFS_GATEWAY}${tokenURI}`);
-                        data = res.data;
-                      } else {
-                        let res = await axios.get(tokenURI);
-                        data = res.data;
-                      }
-
-                      var traits = [];
-                      for (var i = 0; i < data.attributes.length; i++) {
-                        let category = data.attributes[i].trait_type;
-                        let value = data.attributes[i].value;
-                        let payload = {
-                          trait_type: category,
-                          value: value,
-                        };
-                        traits.push(payload);
-                        let release = await mutex.acquire();
-                        if (!categories[category]) {
-                          categories[category] = {};
-                          categories[category]["count"] = 0;
-                          categories[category]["traits"] = {};
-                        }
-                        categories[category]["traits"][value] = categories[category]["traits"][value]
-                          ? categories[category]["traits"][value] + 1
-                          : 1;
-                        categories[category]["count"] += 1;
-                        release();
-                      }
-                      tokens[token_id] = traits;
-                    })
-                    .catch((err) => {
-                      console.log(err);
-                      // Retry one more time
-                      // Else just skip for now (Prevent deadlock)
-                      if (!stuck.includes(token_id)) {
-                        leftover.unshift(token_id);
-                      }
+                    // Retry one more time
+                    // Else just skip for now (Prevent deadlock)
+                    if (!stuck.includes(token_id)) {
+                      leftover.unshift(token_id);
                       stuck.push(token_id);
-                    });
+                    }
+                  }
                 }
 
                 try {
