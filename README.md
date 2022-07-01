@@ -39,19 +39,22 @@ Discord bot to monitor/query OpenSea collections for floor prices, owner ratio, 
   - View a comprehensive summary of the currently monitored collections.
   - The amount of ETH after royalties is calculated given the current collection's floor price to quickly review costs/profits.
 - TBA ...
+
 ## 📸 Command Previews
+
 ### [Link to Full Album](https://imgur.com/a/ZXg0FPc)
-Asset Overview             |  Rarity Rankings
-:-------------------------:|:-------------------------:
-![iM52QFu](https://user-images.githubusercontent.com/51476377/176044074-d3a7f166-87dd-498a-b64c-bb31ce6f06ba.png)  |  ![Screenshot 2022-06-27 150712](https://user-images.githubusercontent.com/51476377/176044260-7d29e213-d1c3-4171-a051-a79eb7a061f4.png)
 
-Derisk Utility             |  Floor Price Monitoring
-:-------------------------:|:-------------------------:
-![IwL4BRq](https://user-images.githubusercontent.com/51476377/176044170-5e6c63b8-c601-4122-b319-83f96b6a4a0b.png)  |  ![x3LZvsV](https://user-images.githubusercontent.com/51476377/176044225-44ee52a6-bda7-4ae9-b048-492db7b7d1d0.png)
+|                                                  Asset Overview                                                   |                                                            Rarity Rankings                                                             |
+| :---------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------: |
+| ![iM52QFu](https://user-images.githubusercontent.com/51476377/176044074-d3a7f166-87dd-498a-b64c-bb31ce6f06ba.png) | ![Screenshot 2022-06-27 150712](https://user-images.githubusercontent.com/51476377/176044260-7d29e213-d1c3-4171-a051-a79eb7a061f4.png) |
 
-Sales History Charting             |  Trait Score Distributions
-:-------------------------:|:-------------------------:
-![Mmhf0pT](https://user-images.githubusercontent.com/51476377/176044109-69156b1d-2a31-4635-a1f9-c4a5b4bd9a42.png) |  ![Screenshot 2022-06-27 150726](https://user-images.githubusercontent.com/51476377/176044275-968e513b-f3e8-46cb-a420-ca251e1be882.png)
+|                                                  Derisk Utility                                                   |                                              Floor Price Monitoring                                               |
+| :---------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------: |
+| ![IwL4BRq](https://user-images.githubusercontent.com/51476377/176044170-5e6c63b8-c601-4122-b319-83f96b6a4a0b.png) | ![x3LZvsV](https://user-images.githubusercontent.com/51476377/176044225-44ee52a6-bda7-4ae9-b048-492db7b7d1d0.png) |
+
+|                                              Sales History Charting                                               |                                                       Trait Score Distributions                                                        |
+| :---------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------: |
+| ![Mmhf0pT](https://user-images.githubusercontent.com/51476377/176044109-69156b1d-2a31-4635-a1f9-c4a5b4bd9a42.png) | ![Screenshot 2022-06-27 150726](https://user-images.githubusercontent.com/51476377/176044275-968e513b-f3e8-46cb-a420-ca251e1be882.png) |
 
 ## 📅 Future Updates / Roadmap Ahead
 
@@ -73,15 +76,15 @@ Sales History Charting             |  Trait Score Distributions
 ## 🧰 Debugging / Notes
 
 - "collection-slug" refers to the unique identifier associated with the collection. Often found at the end of the collection link: https://opensea.io/collection/azuki => azuki
-- This project utilizes mongoDB to support multi-guild functionality. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
+- This project utilizes mongoDB to support multi-guild functionality and is used to host indexed metadata. See more here [mongoDB Docs](https://www.mongodb.com/docs/mongodb-vscode/connect/)
 - Discord bot is built using discord.js v13 with a focus on slash command utility. See more here [discord.js Guide](https://discordjs.guide/interactions/slash-commands.html#registering-slash-commands)
 - For production deployment see the file src/deploy.js for more information on how to register slash commands.
-- Due note that using the OpenSea API can become rate limited without an API Key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
-- The eth and gas commands utilize Etherscan's API endpoint to fetch details. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
+- Due note that using specific OpenSea endpoints requires an API key. See more here on requesting a free key [OpenSea Docs](https://docs.opensea.io/reference/request-an-api-key)
+- The Etherscan API is utilized for eth/gas conversion as well as smart contract scraping. See more on getting a key here [Etherscan API Docs](https://docs.etherscan.io/)
 - ETH conversion is dependent on CoinGecko's API. See more here [CoinGecko Docs](https://www.coingecko.com/en/api/documentation)
 - Rank Rarity scoring is close/comparable to many other rarity sites such as RaritySniffer or NFTNerds by using normalized frequencies of traits. Trait count weighting is also considered as a separate rank.
-- For index-advanced.js I query Etherscan using web3.js on my own Geth light node. Provider options include great services such as Alchemy or Infura but due note that free plans for these providers will likely not be enough when indexing large collections frequently.
-- In addition you will also need an IPFS gateway to be able to parse the metadata if given an IPFS hash via the tokenURI call. This bot currently uses a private gateway but provider options include services such as Pinata.
+- Previously I used a private geth light node alongside a local IPFS gateway due to the amount of requests surpassing the free tiers from providers such as Alchemy or Infura. Since then I have optimized the amount of calls and am able to perform using previously mentioned providers at an affordable level.
+- Running private nodes may be an option when scaling a product like this, or simply purchasing higher plan tiers from providers to open up bandwidth.
 
 ## 🛠 Dependencies Include:
 
