@@ -6,13 +6,14 @@ const sdk = require("api")("@opensea/v1.0#595ks1ol33d7wpk");
 
 /**
  * Function to calculate the rarity scores / rankings for a collection.
- * This indexing function uses OpenSea's API which limits to 50 assets per call and 4 calls per sec
+ * This indexing function uses OpenSea's API which limits to 50 assets per call and 4 calls per sec per key.
  *
- * index-advanced.js uses Etherscan + web3.js to access tokenURI functions of collection to build/index metadata
- * For the web3 provider I recommend using a private eth node. Otherwise you will need to likely pay for premium plans with alchemy / infura
- * This of course depends on your usage/traffic but with collections being upwards of 10k+ in size the calls add up!
+ * This function is being used to override when index-advanced.js does not perform as expected.
+ * Currently when the token id does not match the metadata/ipfs call, the rank rarity may not align (i.e. bokinftofficial)
  *
- * This function is currently not being used in the product but I left it here as a reference or backup if needed.
+ * One solution would be to call tokenURI for each and every token, but this would be costly in terms of web3 http providers.
+ * The other solution is to try and align the token ids by relying on the OpenSea endpoint when fetching token metadata.
+ * The downside to solution 2 would be that the OpenSea api can be rate limited with only 4 calls/second per key.
  */
 
 function delay(ms) {
@@ -23,7 +24,8 @@ function delay(ms) {
 
 exports.indexCollection = async (client, collection_slug) => {
   return new Promise((resolve, reject) => {
-    if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1) return reject("Collection is already queued for indexing. Please check back in a moment.");
+    if (client.OS_INDEX_QUEUE.indexOf(collection_slug) != -1)
+      return reject("Collection is already queued for indexing. Please check back in a moment.");
 
     var allTokensArr = [];
 
@@ -32,7 +34,8 @@ exports.indexCollection = async (client, collection_slug) => {
         const c = res.collection;
         const totalSupply = c.stats.total_supply;
         let allTraits = c.traits;
-        if (!allTraits || Object.keys(allTraits).length == 0) return reject("Could not find traits for given collection. Metadata may not be revealed yet.");
+        if (!allTraits || Object.keys(allTraits).length == 0)
+          return reject("Could not find traits for given collection. Metadata may not be revealed yet.");
 
         // Calc avg number of traits per category. Used for rarity score normalization
         var sum = 0;
@@ -48,7 +51,7 @@ exports.indexCollection = async (client, collection_slug) => {
           });
           categories[category] = category_sum;
 
-          if (Math.abs(category_sum - totalSupply) > 1) {
+          if (Math.abs(category_sum - totalSupply) > 0) {
             sum += 1;
           }
         }
@@ -85,8 +88,6 @@ exports.indexCollection = async (client, collection_slug) => {
           }
         }
 
-        return resolve("done");
-
         // Asset fetching in batches of 50 per call.
         var cursor = "";
         client.OS_INDEX_QUEUE.push(collection_slug);
@@ -117,69 +118,70 @@ exports.indexCollection = async (client, collection_slug) => {
               console.log("Rate limit... Waiting");
               await delay(Math.random() * 2000 + 500);
               continue;
-            }
-            client.OS_INDEX_CNT++;
-            // Attempt at Round Robin Scheduling (Modified to support two collections requesting per RR cycle)
-            if (client.OS_INDEX_CNT >= 20) {
-              let slug = client.OS_INDEX_QUEUE.shift();
-              client.OS_INDEX_QUEUE.push(slug);
-              client.OS_INDEX_CNT = 0;
-            }
-            client.OS_QUEUE--;
-            console.log(`[${collection_slug}]: ${allTokensArr.length}`);
-
-            assetJSON.assets.forEach((asset) => {
-              let { token_id, traits } = asset;
-
-              if (traits.length > 0) {
-                const asset_traits = traits;
-                var none_categories = Object.keys(categories);
-                var trait_map = {};
-
-                var rarity_score = 0;
-                var rarity_score_norm = 0;
-                // Sum up rarity scores based on asset's traits
-                for (var i = 0; i < asset_traits.length; i++) {
-                  const t = asset_traits[i];
-                  none_categories = none_categories.filter((c) => c !== t.trait_type);
-                  rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
-                  rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
-                  trait_map[t.value] = [trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm, t.trait_type];
-                }
-                // Account for rarity in not having specific traits
-                var none_list = {};
-
-                for (var j = 0; j < none_categories.length; j++) {
-                  rarity_score += trait_rarity[none_categories[j]]["none"].rarity;
-                  rarity_score_norm += trait_rarity[none_categories[j]]["none"].rarity_norm;
-                  // Used in parse-traits.js when formatting traits and trait rarity scores into embed
-                  none_list[`**${none_categories[j][0].toUpperCase() + none_categories[j].substring(1)}:** None`] = [
-                    trait_rarity[none_categories[j]]["none"].rarity_norm,
-                    trait_rarity[none_categories[j]]["none"].count,
-                  ];
-                }
-                trait_map[`OtherList`] = none_list;
-                if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0;
-                num_traits_freq[asset_traits.length] += 1;
-
-                let asset_rarity = {
-                  token_id: token_id,
-                  trait_count: asset_traits.length,
-                  trait_map: trait_map,
-                  rarity_score: rarity_score,
-                  rarity_score_norm: rarity_score_norm,
-                };
-                allTokensArr.push(asset_rarity);
+            } else {
+              client.OS_INDEX_CNT++;
+              // Attempt at Round Robin Scheduling (Modified to support two collections requesting per RR cycle)
+              if (client.OS_INDEX_CNT >= 20) {
+                let slug = client.OS_INDEX_QUEUE.shift();
+                client.OS_INDEX_QUEUE.push(slug);
+                client.OS_INDEX_CNT = 0;
               }
-            });
-            count += assetJSON.assets.length;
-            cursor = assetJSON.next;
+              client.OS_QUEUE--;
+              console.log(`[${collection_slug}]: ${allTokensArr.length}`);
+
+              assetJSON.assets.forEach((asset) => {
+                let { token_id, traits } = asset;
+
+                if (traits.length > 0) {
+                  const asset_traits = traits;
+                  var none_categories = Object.keys(categories);
+                  var trait_map = {};
+
+                  var rarity_score = 0;
+                  var rarity_score_norm = 0;
+                  // Sum up rarity scores based on asset's traits
+                  for (var i = 0; i < asset_traits.length; i++) {
+                    const t = asset_traits[i];
+                    none_categories = none_categories.filter((c) => c !== t.trait_type);
+                    rarity_score += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity;
+                    rarity_score_norm += trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm;
+                    trait_map[t.value] = [trait_rarity[t.trait_type][t.value.toLowerCase()].rarity_norm, t.trait_type];
+                  }
+                  // Account for rarity in not having specific traits
+                  var none_list = {};
+
+                  for (var j = 0; j < none_categories.length; j++) {
+                    rarity_score += trait_rarity[none_categories[j]]["none"].rarity;
+                    rarity_score_norm += trait_rarity[none_categories[j]]["none"].rarity_norm;
+                    // Used in parse-traits.js when formatting traits and trait rarity scores into embed
+                    none_list[`**${none_categories[j][0].toUpperCase() + none_categories[j].substring(1)}:** None`] = [
+                      trait_rarity[none_categories[j]]["none"].rarity_norm,
+                      trait_rarity[none_categories[j]]["none"].count,
+                    ];
+                  }
+                  trait_map[`OtherList`] = none_list;
+                  if (!num_traits_freq[asset_traits.length]) num_traits_freq[asset_traits.length] = 0;
+                  num_traits_freq[asset_traits.length] += 1;
+
+                  let asset_rarity = {
+                    token_id: token_id,
+                    trait_count: asset_traits.length,
+                    trait_map: trait_map,
+                    rarity_score: rarity_score,
+                    rarity_score_norm: rarity_score_norm,
+                  };
+                  allTokensArr.push(asset_rarity);
+                }
+              });
+              count += assetJSON.assets.length;
+              console.log(`[${collection_slug}]: ${count}`);
+              cursor = assetJSON.next;
+            }
           } catch (err) {
             console.log(err);
-            await delay(1000);
           }
         }
-
+        console.log(`[${collection_slug}]: Count after indexing = ${count}`);
         if (allTokensArr.length == 0) return reject("Error parsing collection's traits. Please try again later");
 
         // Account for trait count weights and construct rankings
@@ -252,12 +254,13 @@ exports.indexCollection = async (client, collection_slug) => {
             const rankOBJ = {
               slug: collection_slug,
               ranks: rankings,
+              ranksArr: allTokensArr,
             };
             await new metaSchema(rankOBJ).save();
           } else {
             console.log(`[${collection_slug}]: Updating existing collection ranks.`);
             try {
-              await metaSchema.updateOne({ slug: collection_slug }, { ranks: rankings });
+              await metaSchema.updateOne({ slug: collection_slug }, { ranks: rankings, ranksArr: allTokensArr });
               if (res == null) return interaction.reply("An error occurred. Please try again.");
             } catch (err) {
               reject("An error occurred while indexing. Please try again.");

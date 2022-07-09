@@ -119,14 +119,14 @@ module.exports = {
 
       var embeds = [];
       let ranks = rankOBJ.ranksArr;
-      let assets = rankOBJ.assetData;
       if (!ranks.length) {
         return interaction.editReply({ content: "Error while compiling ranked assets. Please try again in a moment." });
       }
 
       for (var i = 0; i < Math.min(ranks.length, 10); i++) {
         let token_id = ranks[i].token_id;
-        let asset = assets[token_id];
+        let asset = await getAsset(client, slug, token_id);
+        asset = asset.assetObject;
         const rank_norm = ranks[i].rank_norm;
         const rank_trait_count = ranks[i].rank_trait_count;
         const rank_norm_score = ranks[i].rarity_score_norm.toFixed(2);
@@ -137,7 +137,7 @@ module.exports = {
         var traitDesc = await parseTraits(client, traits, trait_map).catch((err) => console.log(err));
 
         let name = asset.name ? asset.name : `#${token_id}`;
-        let image_url = asset.image ? asset.image : collection_img;
+        let image_url = asset.image_url ? asset.image_url : collection_img;
         if (image_url.substr(0, 7) == "ipfs://") {
           image_url = image_url.replace("ipfs://", "");
           image_url = `${botconfig.INFURA_IPFS}${image_url}`;

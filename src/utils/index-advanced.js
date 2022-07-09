@@ -57,7 +57,6 @@ exports.indexAdvanced = async (client, collection_slug) => {
 
             var categories = {};
             var tokens = {};
-            var assetData = {};
             var leftover = [];
 
             client.OS_INDEX_QUEUE.push(collection_slug);
@@ -104,7 +103,7 @@ exports.indexAdvanced = async (client, collection_slug) => {
 
             async.eachLimit(
               token_ids,
-              50,
+              100,
               async function (token_id, callback) {
                 try {
                   // Check if uri is of form ipfs:// + ipfs hash
@@ -140,14 +139,6 @@ exports.indexAdvanced = async (client, collection_slug) => {
                     release();
                   }
                   tokens[token_id] = traits;
-                  let image = data.image;
-                  let name = data.name;
-                  let assetOBJ = {
-                    name: name,
-                    image: image,
-                    traits: [],
-                  };
-                  assetData[token_id] = assetOBJ;
                   if (token_id % 50 == 0) {
                     console.log(`[${collection_slug}]: ${token_id}`);
                   }
@@ -378,13 +369,13 @@ exports.indexAdvanced = async (client, collection_slug) => {
                         slug: collection_slug,
                         ranks: rankings,
                         ranksArr: allTokensArr,
-                        assetData: assetData,
                       };
                       await new metaSchema(rankOBJ).save();
                     } else {
                       console.log(`[${collection_slug}]: Updating existing collection ranks.`);
                       try {
-                        await metaSchema.updateOne({ slug: collection_slug }, { ranks: rankings, ranksArr: allTokensArr, assetData: assetData });
+                        await metaSchema.updateOne({ slug: collection_slug }, { ranks: rankings, ranksArr: allTokensArr });
+                        if (res == null) return interaction.reply("An error occurred. Please try again.");
                       } catch (err) {
                         reject("An error occurred while indexing. Please try again.");
                       }

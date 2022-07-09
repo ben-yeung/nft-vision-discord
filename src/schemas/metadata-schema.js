@@ -13,10 +13,6 @@ const metadata_schema = new mongoose.Schema({
     type: Array,
     required: true,
   },
-  assetData: {
-    type: Object,
-    required: true,
-  },
 });
 
 module.exports = mongoose.model("collection_ranks", metadata_schema);
