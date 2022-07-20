@@ -6,23 +6,11 @@ const sdk = require("api")("@opensea/v1.0#bg4ikl1mk428b");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("derisk")
-    .setDescription(
-      "Calculate the minimum amount of ETH to list an NFT in order to receive exactly what you paid for it."
-    )
+    .setDescription("Calculate the minimum amount of ETH to list an NFT in order to receive exactly what you paid for it.")
     .addStringOption((option) =>
-      option
-        .setName("collection-slug")
-        .setDescription(
-          "OpenSea Collection slug. Commmonly found in the URL of the collection."
-        )
-        .setRequired(true)
+      option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true)
     )
-    .addNumberOption((option) =>
-      option
-        .setName("amount")
-        .setDescription("Price bought for. Include gas fees for best estimate.")
-        .setRequired(true)
-    ),
+    .addNumberOption((option) => option.setName("amount").setDescription("Price bought for. Include gas fees for best estimate.").setRequired(true)),
   options: "[collection-slug] [amount]",
   async execute(interaction, args, client) {
     let amount = interaction.options.getNumber("amount");
@@ -63,10 +51,7 @@ module.exports = {
         let totalSupply = stats.total_supply;
         let numOwners = stats.num_owners;
         let currFloor = Number(stats.floor_price.toFixed(4));
-        let royalty =
-          (Number(res.collection.dev_seller_fee_basis_points) +
-            Number(res.collection.opensea_seller_fee_basis_points)) /
-          100;
+        let royalty = (Number(res.collection.dev_seller_fee_basis_points) + Number(res.collection.opensea_seller_fee_basis_points)) / 100;
         let deriskListing = Number((amount / (1 - royalty / 100)).toFixed(4));
         let afterFees = Number((currFloor * (1 - royalty / 100)).toFixed(4));
         let profits = Number(afterFees - amount).toFixed(4);
@@ -79,29 +64,20 @@ module.exports = {
 
         let desc = `**If you bought for a total of** ${amount}Ξ (~$${client
           .convertETH(amount)
-          .toLocaleString(
-            "en-US"
-          )}) \n **To sell for break even list at** ${deriskListing}Ξ (~$${client
+          .toLocaleString("en-US")}) \n **To sell for break even list at** ${deriskListing}Ξ (~$${client
           .convertETH(deriskListing)
-          .toLocaleString("en-US")}) \n
-                            **If you sold at current floor** ${currFloor}Ξ (~$${client
+          .toLocaleString("en-US")}) \n\n**If you sold at current floor** ${currFloor}Ξ (~$${client
           .convertETH(currFloor)
-          .toLocaleString(
-            "en-US"
-          )}) \n **You would receive** ${afterFees.toLocaleString(
-          "en-US"
-        )}Ξ (~$${client
+          .toLocaleString("en-US")}) \n **You would receive** ${afterFees.toLocaleString("en-US")}Ξ (~$${client
           .convertETH(afterFees)
+          .toLocaleString("en-US")}) \n **Current floor nets** ${profits}Ξ (~$${client
+          .convertETH(profits)
           .toLocaleString(
             "en-US"
-          )}) \n **Current floor nets** ${profits}Ξ (~$${client
-          .convertETH(profits)
-          .toLocaleString("en-US")}) in profit. \n
-                            Use /royalty [slug] [amount] \n to view custom sell targets after fees. \n\n [OpenSea](${openSea})`;
+          )}) in profit. \n\n Use /royalty [slug] [amount] \n to view custom sell targets after fees. \n\n [OpenSea](${openSea})`;
         if (discordURL) desc += ` • [Discord](${discordURL})`;
         if (website) desc += ` • [Website](${website})`;
-        if (twitterUser)
-          desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
+        if (twitterUser) desc += ` • [Twitter](https://twitter.com/${twitterUser})`;
 
         let findEmbed = new Discord.MessageEmbed()
           .setTitle(`${name}`)
@@ -117,8 +93,7 @@ module.exports = {
       .catch((err) => {
         console.log(err);
         return interaction.reply({
-          content:
-            "Error while searching for collection. Check for typos or try again.",
+          content: "Error while searching for collection. Check for typos or try again.",
           ephemeral: true,
         });
       });

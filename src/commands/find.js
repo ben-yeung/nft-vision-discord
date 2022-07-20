@@ -28,12 +28,16 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("find")
     .setDescription("Retrieve information for a given collection. View stats, royalties, fp, etc")
-    .addStringOption((option) => option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true)),
+    .addStringOption((option) =>
+      option.setName("collection-slug").setDescription("OpenSea Collection slug. Commmonly found in the URL of the collection.").setRequired(true)
+    ),
   options: "[collection-slug]",
   async execute(interaction, args, client) {
     if (db.get(`${interaction.user.id}.findstarted`) && Date.now() - db.get(`${interaction.user.id}.findstarted`) <= 6000) {
       return interaction.reply({
-        content: `Please close your most recent find command or wait ${ms(6000 - (Date.now() - db.get(`${interaction.user.id}.findstarted`)))} before starting another query!`,
+        content: `Please close your most recent find command or wait ${ms(
+          6000 - (Date.now() - db.get(`${interaction.user.id}.findstarted`))
+        )} before starting another query!`,
         ephemeral: true,
       });
     } else {
@@ -72,27 +76,33 @@ module.exports = {
 
         socials += `[OpenSea](${openSea}) • [Etherscan](${contract})`;
 
-        let detailedDesc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) 
-                                    \n **Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(totalVol).toLocaleString("en-US")}) 
-                                     **Total Sales:** ${totalSales} 
-                                    \n **24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayVol).toLocaleString("en-US")}) 
-                                     **24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayAvg).toLocaleString("en-US")}) 
-                                     **24H Sales:** ${oneDaySales} 
-                                    \n **7 Day Volume:** ${sevenDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(sevenDayVol).toLocaleString("en-US")}) 
-                                     **7 Day Floor Avg:** ${sevenDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(sevenDayAvg).toLocaleString("en-US")}) 
-                                     **7 Day Sales:** ${sevenDaySales} 
-                                    \n **30 Day Volume:** ${thirtyDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(thirtyDayVol).toLocaleString("en-US")}) 
-                                    **30 Day Floor Avg:** ${thirtyDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(thirtyDayAvg).toLocaleString("en-US")}) 
-                                    **30 Day Sales:** ${thirtyDaySales} 
-                                    \n`;
+        let detailedDesc = `**Floor Price:** ${currFloor}Ξ (~$${client
+          .convertETH(currFloor)
+          .toLocaleString("en-US")}) \n**Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(totalVol)
+          .toLocaleString("en-US")}) \n**Total Sales:** ${totalSales} \n\n**24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(oneDayVol)
+          .toLocaleString("en-US")}) \n**24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(oneDayAvg)
+          .toLocaleString("en-US")}) \n**24H Sales:** ${oneDaySales} \n\n**7 Day Volume:** ${sevenDayVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(sevenDayVol)
+          .toLocaleString("en-US")}) \n**7 Day Floor Avg:** ${sevenDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(sevenDayAvg)
+          .toLocaleString("en-US")}) \n**7 Day Sales:** ${sevenDaySales} \n\n **30 Day Volume:** ${thirtyDayVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(thirtyDayVol)
+          .toLocaleString("en-US")}) \n**30 Day Floor Avg:** ${thirtyDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(thirtyDayAvg)
+          .toLocaleString("en-US")}) \n**30 Day Sales:** ${thirtyDaySales} \n\n`;
 
-        let desc = `**Floor Price:** ${currFloor}Ξ (~$${client.convertETH(currFloor).toLocaleString("en-US")}) 
-                            \n **Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(totalVol).toLocaleString("en-US")}) 
-                            **Total Sales:** ${totalSales} 
-                            \n **24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayVol).toLocaleString("en-US")}) 
-                            **24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client.convertETH(oneDayAvg).toLocaleString("en-US")}) 
-                            **24H Sales:** ${oneDaySales} 
-                            \n`;
+        let desc = `**Floor Price:** ${currFloor}Ξ (~$${client
+          .convertETH(currFloor)
+          .toLocaleString("en-US")}) \n **Total Volume:** ${totalVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(totalVol)
+          .toLocaleString("en-US")}) \n**Total Sales:** ${totalSales} \n\n **24H Volume:** ${oneDayVol.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(oneDayVol)
+          .toLocaleString("en-US")}) \n**24H Floor Avg:** ${oneDayAvg.toLocaleString("en-US")}Ξ (~$${client
+          .convertETH(oneDayAvg)
+          .toLocaleString("en-US")}) \n**24H Sales:** ${oneDaySales} \n\n`;
 
         if (discordURL) socials += ` • [Discord](${discordURL})`;
         if (website) socials += ` • [Website](${website})`;
